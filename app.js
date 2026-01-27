@@ -145,44 +145,52 @@ async function initWhisper() {
 // ============================================
 
 let recognition = null;
+let webSpeechGotResult = false;
 
 function setupSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
+
     if (!SpeechRecognition) {
         console.error('Speech recognition not supported');
         return null;
     }
-    
+
     recognition = new SpeechRecognition();
     recognition.lang = 'zh-CN';  // Mandarin Chinese
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-    
+
     recognition.onresult = (event) => {
+        webSpeechGotResult = true;
         const transcript = event.results[0][0].transcript;
         console.log('Recognized:', transcript);
         handleTranscription(transcript);
     };
-    
+
     recognition.onerror = (event) => {
         console.error('Recognition error:', event.error);
-        stopRecording();
-        
+        webSpeechGotResult = true; // Prevent double-handling in onend
+        stopWebSpeechRecording();
+
         if (event.error === 'no-speech') {
             handleTranscription('');
-        } else {
+        } else if (event.error !== 'aborted') {
             alert(`Recognition error: ${event.error}`);
         }
     };
-    
+
     recognition.onend = () => {
-        if (isRecording) {
-            stopRecording();
+        console.log('Recognition ended, gotResult:', webSpeechGotResult);
+        const wasRecording = isRecording;
+        stopWebSpeechRecording();
+
+        // If we were recording but never got a result, show empty result
+        if (wasRecording && !webSpeechGotResult) {
+            handleTranscription('');
         }
     };
-    
+
     return recognition;
 }
 
@@ -192,11 +200,15 @@ function setupSpeechRecognition() {
 
 async function toggleRecording() {
     if (!isModelLoaded) return;
-    
-    if (isRecording) {
-        stopRecording();
-    } else {
-        startRecording();
+
+    try {
+        if (isRecording) {
+            await stopRecording();
+        } else {
+            await startRecording();
+        }
+    } catch (error) {
+        console.error('Toggle recording error:', error);
     }
 }
 
@@ -223,6 +235,7 @@ async function startWebSpeechRecording() {
     }
 
     try {
+        webSpeechGotResult = false; // Reset flag
         recognition.start();
         isRecording = true;
         updateRecordButton();
@@ -243,9 +256,9 @@ async function startWhisperRecording() {
     }
 }
 
-function stopRecording() {
+async function stopRecording() {
     if (asrMode === 'whisper') {
-        stopWhisperRecording();
+        await stopWhisperRecording();
     } else {
         stopWebSpeechRecording();
     }
