@@ -278,7 +278,17 @@ function stopWebSpeechRecording() {
 }
 
 async function stopWhisperRecording() {
-    if (!audioRecorder || !audioRecorder.isRecording()) {
+    console.log('stopWhisperRecording called');
+
+    if (!audioRecorder) {
+        console.log('No audioRecorder');
+        isRecording = false;
+        updateRecordButton();
+        return;
+    }
+
+    if (!audioRecorder.isRecording()) {
+        console.log('audioRecorder not recording');
         isRecording = false;
         updateRecordButton();
         return;
@@ -290,20 +300,45 @@ async function stopWhisperRecording() {
 
     try {
         // Stop recording and get audio blob
+        console.log('Stopping audio recorder...');
         const audioBlob = await audioRecorder.stop();
+        console.log('Audio blob size:', audioBlob.size);
+
+        if (audioBlob.size === 0) {
+            console.log('Empty audio blob');
+            hideLoading();
+            handleTranscription('');
+            return;
+        }
 
         // Resample to 16kHz for Whisper
+        console.log('Resampling audio...');
         const audioFloat32 = await resampleTo16kHz(audioBlob);
+        console.log('Audio resampled, length:', audioFloat32.length);
 
         // Run transcription
+        console.log('Running transcription...');
         const result = await transcribeAudio(audioFloat32);
+        console.log('Transcription result:', result);
 
         hideLoading();
+
+        // Defensive check before handling transcription
+        if (!currentLesson) {
+            console.error('No current lesson!');
+            return;
+        }
+
         handleTranscription(result.text);
+        console.log('handleTranscription completed');
     } catch (error) {
         console.error('Whisper transcription error:', error);
         hideLoading();
-        handleTranscription('');
+
+        // Only call handleTranscription if we have a current lesson
+        if (currentLesson) {
+            handleTranscription('');
+        }
     }
 }
 
@@ -336,44 +371,56 @@ function updateRecordButton() {
 // ============================================
 
 function handleTranscription(transcript) {
-    const phrase = currentLesson.phrases[currentPhraseIndex];
-    const result = scoreTranscription(transcript, phrase.characters);
-    
-    // Update UI with result
-    const resultCard = document.getElementById('resultCard');
-    const resultStatus = document.getElementById('resultStatus');
-    const resultIcon = document.getElementById('resultIcon');
-    const resultFeedback = document.getElementById('resultFeedback');
-    const resultScore = document.getElementById('resultScore');
-    const resultTranscription = document.getElementById('resultTranscription');
-    const resultExpected = document.getElementById('resultExpected');
-    const resultMissing = document.getElementById('resultMissing');
-    
-    // Set pass/fail styling
-    if (result.passed) {
-        resultStatus.className = 'result-status pass';
-        resultIcon.textContent = '✓';
-        resultScore.className = 'result-score pass';
-        completedPhrases.add(currentPhraseIndex);
-        updateProgress();
-    } else {
-        resultStatus.className = 'result-status fail';
-        resultIcon.textContent = '✗';
-        resultScore.className = 'result-score fail';
+    console.log('handleTranscription called with:', transcript);
+
+    try {
+        if (!currentLesson || !currentLesson.phrases || !currentLesson.phrases[currentPhraseIndex]) {
+            console.error('Invalid lesson state:', { currentLesson, currentPhraseIndex });
+            return;
+        }
+
+        const phrase = currentLesson.phrases[currentPhraseIndex];
+        const result = scoreTranscription(transcript, phrase.characters);
+
+        // Update UI with result
+        const resultCard = document.getElementById('resultCard');
+        const resultStatus = document.getElementById('resultStatus');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultFeedback = document.getElementById('resultFeedback');
+        const resultScore = document.getElementById('resultScore');
+        const resultTranscription = document.getElementById('resultTranscription');
+        const resultExpected = document.getElementById('resultExpected');
+        const resultMissing = document.getElementById('resultMissing');
+
+        // Set pass/fail styling
+        if (result.passed) {
+            resultStatus.className = 'result-status pass';
+            resultIcon.textContent = '✓';
+            resultScore.className = 'result-score pass';
+            completedPhrases.add(currentPhraseIndex);
+            updateProgress();
+        } else {
+            resultStatus.className = 'result-status fail';
+            resultIcon.textContent = '✗';
+            resultScore.className = 'result-score fail';
+        }
+
+        resultFeedback.textContent = result.feedback;
+        resultScore.textContent = `${result.score}%`;
+        resultTranscription.textContent = transcript || '(nothing detected)';
+        resultExpected.textContent = phrase.characters;
+
+        if (result.missedCharacters.length > 0) {
+            resultMissing.textContent = `Missing: ${result.missedCharacters.join(' ')}`;
+        } else {
+            resultMissing.textContent = '';
+        }
+
+        resultCard.classList.add('visible');
+        console.log('Result card shown');
+    } catch (error) {
+        console.error('Error in handleTranscription:', error);
     }
-    
-    resultFeedback.textContent = result.feedback;
-    resultScore.textContent = `${result.score}%`;
-    resultTranscription.textContent = transcript || '(nothing detected)';
-    resultExpected.textContent = phrase.characters;
-    
-    if (result.missedCharacters.length > 0) {
-        resultMissing.textContent = `Missing: ${result.missedCharacters.join(' ')}`;
-    } else {
-        resultMissing.textContent = '';
-    }
-    
-    resultCard.classList.add('visible');
 }
 
 // ============================================
