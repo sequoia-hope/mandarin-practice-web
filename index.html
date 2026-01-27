@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>普通话练习 - Mandarin Practice</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text: #1f2937;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 24px 0;
+        }
+
+        .header-icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 4px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+        }
+
+        /* Lesson Cards */
+        .lesson-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .lesson-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .lesson-number {
+            width: 44px;
+            height: 44px;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .lesson-info {
+            flex: 1;
+        }
+
+        .lesson-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .lesson-chinese {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .lesson-count {
+            text-align: center;
+            color: var(--primary);
+            font-size: 14px;
+        }
+
+        .lesson-count span {
+            display: block;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* Lesson View */
+        .lesson-view {
+            display: none;
+        }
+
+        .lesson-view.active {
+            display: block;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 8px 0;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        /* Phrase Card */
+        .phrase-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 32px 24px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+
+        .phrase-characters {
+            font-size: 36px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        .phrase-pinyin {
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .phrase-english {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 24px;
+        }
+
+        .listen-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .listen-button:hover {
+            background: #2563eb;
+        }
+
+        .listen-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Result Card */
+        .result-card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .result-card.visible {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .result-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .result-status.pass {
+            color: var(--success);
+        }
+
+        .result-status.fail {
+            color: var(--danger);
+        }
+
+        .result-score {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .result-score.pass {
+            color: var(--success);
+        }
+
+        .result-score.fail {
+            color: var(--warning);
+        }
+
+        .result-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 12px 0;
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .result-text {
+            margin-bottom: 12px;
+        }
+
+        .result-expected {
+            color: var(--primary);
+        }
+
+        .result-missing {
+            font-size: 14px;
+            color: var(--danger);
+        }
+
+        /* Record Button */
+        .record-section {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .record-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            background: var(--success);
+            color: white;
+            font-size: 32px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .record-button:hover {
+            transform: scale(1.05);
+        }
+
+        .record-button.recording {
+            background: var(--danger);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .record-button:disabled {
+            background: var(--text-secondary);
+            box-shadow: none;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        .record-hint {
+            margin-top: 12px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .nav-button:disabled {
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .skip-button {
+            color: var(--text-secondary);
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .loading-overlay.visible {
+            display: flex;
+        }
+
+        .loading-card {
+            background: var(--card);
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+        }
+
+        /* Model status */
+        .model-status {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .model-status.loading {
+            background: #fef3c7;
+        }
+
+        .model-status.ready {
+            background: #d1fae5;
+        }
+
+        .model-status.error {
+            background: #fee2e2;
+        }
+
+        /* Menu view toggle */
+        .menu-view {
+            display: block;
+        }
+
+        .menu-view.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Menu View -->
+        <div id="menuView" class="menu-view">
+            <div class="header">
+                <div class="header-icon">🌲</div>
+                <h1>普通话练习</h1>
+                <p>Mandarin Practice</p>
+            </div>
+
+            <div id="modelStatus" class="model-status loading">
+                Loading Whisper model... This may take a minute on first load.
+            </div>
+
+            <div id="lessonList"></div>
+        </div>
+
+        <!-- Lesson View -->
+        <div id="lessonView" class="lesson-view">
+            <button class="back-button" onclick="showMenu()">
+                ← Back to Lessons
+            </button>
+
+            <h2 id="lessonTitle" style="margin-bottom: 16px;"></h2>
+
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text">
+                <span id="progressCompleted">0/0 completed</span>
+                <span id="progressCurrent">Phrase 1 of 1</span>
+            </div>
+
+            <div class="phrase-card">
+                <div id="phraseCharacters" class="phrase-characters">你好</div>
+                <div id="phrasePinyin" class="phrase-pinyin">nǐ hǎo</div>
+                <div id="phraseEnglish" class="phrase-english">Hello</div>
+                <button id="listenButton" class="listen-button" onclick="speakPhrase()">
+                    🔊 Listen
+                </button>
+            </div>
+
+            <div id="resultCard" class="result-card">
+                <div class="result-header">
+                    <div id="resultStatus" class="result-status">
+                        <span id="resultIcon">✓</span>
+                        <span id="resultFeedback">Perfect!</span>
+                    </div>
+                    <div id="resultScore" class="result-score">100%</div>
+                </div>
+                <hr class="result-divider">
+                <div class="result-label">You said:</div>
+                <div id="resultTranscription" class="result-text">(nothing detected)</div>
+                <div class="result-label">Expected:</div>
+                <div id="resultExpected" class="result-text result-expected">你好</div>
+                <div id="resultMissing" class="result-missing"></div>
+            </div>
+
+            <div class="record-section">
+                <button id="recordButton" class="record-button" onclick="toggleRecording()" disabled>
+                    🎤
+                </button>
+                <div id="recordHint" class="record-hint">Loading model...</div>
+            </div>
+
+            <div class="nav-buttons">
+                <button id="prevButton" class="nav-button" onclick="prevPhrase()" disabled>
+                    ← Previous
+                </button>
+                <button class="nav-button skip-button" onclick="nextPhrase()">
+                    Skip
+                </button>
+                <button id="nextButton" class="nav-button" onclick="nextPhrase()">
+                    Next →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-card">
+            <div class="spinner"></div>
+            <div id="loadingText" class="loading-text">Processing...</div>
+        </div>
+    </div>
+
+    <script src="curriculum.js"></script>
+    <script src="scoring.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>

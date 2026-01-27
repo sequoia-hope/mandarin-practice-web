@@ -1,0 +1,5 @@
+.claude/
+models/
+*.pem
+*.key
+*.crt
