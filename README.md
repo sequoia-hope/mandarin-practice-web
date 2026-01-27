@@ -2,6 +2,13 @@
 
 A web-based Mandarin pronunciation practice app using browser speech recognition.
 
+## Live Demo
+
+**https://sequoia-hope.github.io/mandarin-practice-web/**
+
+- Default: Uses Web Speech API (cloud-based, works on most browsers)
+- [Whisper mode](https://sequoia-hope.github.io/mandarin-practice-web/?asr=whisper): Uses local Whisper model (~41MB download, fully offline after first load)
+
 ## Quick Start
 
 ### Option 1: Python (simplest)

@@ -446,10 +446,43 @@
         .menu-view.hidden {
             display: none;
         }
+
+        /* ASR Mode Switcher */
+        .asr-switcher {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .asr-switcher a {
+            color: var(--primary);
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 16px;
+            background: var(--card);
+            transition: background 0.2s;
+        }
+
+        .asr-switcher a:hover {
+            background: var(--border);
+        }
+
+        .asr-switcher a.active {
+            background: var(--primary);
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- ASR Mode Switcher -->
+        <div id="asrSwitcher" class="asr-switcher">
+            <a href="?" id="linkWebSpeech">Web Speech</a>
+            <a href="?asr=whisper" id="linkWhisper">Whisper (Local)</a>
+        </div>
+
         <!-- Menu View -->
         <div id="menuView" class="menu-view">
             <div class="header">

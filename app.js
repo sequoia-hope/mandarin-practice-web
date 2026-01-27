@@ -40,7 +40,22 @@ function getASRMode() {
 document.addEventListener('DOMContentLoaded', () => {
     renderLessonList();
     initWhisper();
+    updateASRSwitcher();
 });
+
+function updateASRSwitcher() {
+    const mode = getASRMode();
+    const linkWebSpeech = document.getElementById('linkWebSpeech');
+    const linkWhisper = document.getElementById('linkWhisper');
+
+    if (mode === 'whisper') {
+        linkWhisper.classList.add('active');
+        linkWebSpeech.classList.remove('active');
+    } else {
+        linkWebSpeech.classList.add('active');
+        linkWhisper.classList.remove('active');
+    }
+}
 
 function renderLessonList() {
     const container = document.getElementById('lessonList');
