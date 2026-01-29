@@ -424,51 +424,70 @@ function handleTranscription(transcript) {
 }
 
 // ============================================
-// Text-to-Speech
+// Audio Playback (Pre-generated Chinese TTS)
 // ============================================
 
+let currentAudio = null;
+
 function speakPhrase() {
+    const button = document.getElementById('listenButton');
+
+    // Stop any currently playing audio
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+    }
+
+    // Get the audio file path: audio/lesson{id}_phrase{index}.mp3
+    const lessonId = currentLesson.id;
+    const audioPath = `audio/lesson${lessonId}_phrase${currentPhraseIndex}.mp3`;
+
+    console.log('Playing audio:', audioPath);
+
+    currentAudio = new Audio(audioPath);
+
+    button.disabled = true;
+    button.innerHTML = '🔊 Playing...';
+
+    currentAudio.onended = () => {
+        button.disabled = false;
+        button.innerHTML = '🔊 Listen';
+    };
+
+    currentAudio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        button.disabled = false;
+        button.innerHTML = '🔊 Listen';
+        // Fallback to browser TTS if audio file fails
+        speakPhraseFallback();
+    };
+
+    currentAudio.play().catch(err => {
+        console.error('Audio play error:', err);
+        button.disabled = false;
+        button.innerHTML = '🔊 Listen';
+    });
+}
+
+// Fallback to browser TTS if pre-generated audio fails
+function speakPhraseFallback() {
     const phrase = currentLesson.phrases[currentPhraseIndex];
-    
+
     if ('speechSynthesis' in window) {
-        // Cancel any ongoing speech
         speechSynthesis.cancel();
-        
+
         const utterance = new SpeechSynthesisUtterance(phrase.characters);
         utterance.lang = 'zh-CN';
-        utterance.rate = 0.8;  // Slightly slower for learners
-        
-        // Try to find a Chinese voice
+        utterance.rate = 0.8;
+
         const voices = speechSynthesis.getVoices();
         const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
         if (chineseVoice) {
             utterance.voice = chineseVoice;
         }
-        
-        const button = document.getElementById('listenButton');
-        button.disabled = true;
-        button.innerHTML = '🔊 Playing...';
-        
-        utterance.onend = () => {
-            button.disabled = false;
-            button.innerHTML = '🔊 Listen';
-        };
-        
-        utterance.onerror = () => {
-            button.disabled = false;
-            button.innerHTML = '🔊 Listen';
-        };
-        
-        speechSynthesis.speak(utterance);
-    } else {
-        alert('Text-to-speech not supported in this browser');
-    }
-}
 
-// Preload voices (needed for some browsers)
-if ('speechSynthesis' in window) {
-    speechSynthesis.getVoices();
-    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+        speechSynthesis.speak(utterance);
+    }
 }
 
 // ============================================
