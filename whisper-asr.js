@@ -80,20 +80,28 @@ export async function initWhisperModel(onProgress = null) {
 /**
  * Transcribe audio using Whisper
  * @param {Float32Array} audioFloat32 - Audio data as Float32Array at 16kHz sample rate
+ * @param {string} expectedPhrase - Optional expected phrase to guide transcription
  * @returns {Promise<{text: string}>} - Transcription result
  */
-export async function transcribeAudio(audioFloat32) {
+export async function transcribeAudio(audioFloat32, expectedPhrase = null) {
     if (!modelLoaded || !transcriber) {
         throw new Error('Whisper model not loaded. Call initWhisperModel() first.');
     }
 
     try {
-        const result = await transcriber(audioFloat32, {
+        const options = {
             language: 'chinese',
             task: 'transcribe',
             chunk_length_s: 30,
             stride_length_s: 5,
-        });
+        };
+
+        // Add prompt to guide transcription if expected phrase is provided
+        if (expectedPhrase) {
+            options.prompt = expectedPhrase;
+        }
+
+        const result = await transcriber(audioFloat32, options);
 
         return {
             text: result.text ? result.text.trim() : ''

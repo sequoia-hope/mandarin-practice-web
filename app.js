@@ -247,7 +247,17 @@ async function startWebSpeechRecording() {
 
 async function startWhisperRecording() {
     try {
-        await audioRecorder.start();
+        await audioRecorder.start({
+            // Auto-stop when silence is detected after speech
+            onSilenceDetected: () => {
+                if (isRecording) {
+                    console.log('Auto-stopping due to silence');
+                    stopRecording();
+                }
+            },
+            silenceThreshold: 15,  // Volume threshold (0-255)
+            silenceDuration: 1500  // 1.5 seconds of silence
+        });
         isRecording = true;
         updateRecordButton();
     } catch (error) {
@@ -316,9 +326,10 @@ async function stopWhisperRecording() {
         const audioFloat32 = await resampleTo16kHz(audioBlob);
         console.log('Audio resampled, length:', audioFloat32.length);
 
-        // Run transcription
-        console.log('Running transcription...');
-        const result = await transcribeAudio(audioFloat32);
+        // Run transcription with expected phrase as prompt
+        const expectedPhrase = currentLesson?.phrases[currentPhraseIndex]?.characters;
+        console.log('Running transcription with expected phrase:', expectedPhrase);
+        const result = await transcribeAudio(audioFloat32, expectedPhrase);
         console.log('Transcription result:', result);
 
         hideLoading();

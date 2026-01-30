@@ -3,20 +3,37 @@
 
 /**
  * AudioRecorder class for capturing microphone audio
+ * Supports automatic end-of-speech detection via silence detection
  */
 export class AudioRecorder {
     constructor() {
         this.mediaRecorder = null;
         this.audioChunks = [];
         this.stream = null;
+        this.audioContext = null;
+        this.analyser = null;
+        this.silenceDetectionInterval = null;
+        this.onSilenceDetected = null;
+        this.silenceStart = null;
+        this.hasSpoken = false;
     }
 
     /**
      * Start recording from the microphone
+     * @param {Object} options - Recording options
+     * @param {function} options.onSilenceDetected - Callback when silence is detected after speech
+     * @param {number} options.silenceThreshold - Volume threshold for silence (0-255, default 15)
+     * @param {number} options.silenceDuration - Ms of silence before triggering callback (default 1500)
      * @returns {Promise<void>}
      */
-    async start() {
+    async start(options = {}) {
         this.audioChunks = [];
+        this.onSilenceDetected = options.onSilenceDetected || null;
+        this.silenceStart = null;
+        this.hasSpoken = false;
+
+        const silenceThreshold = options.silenceThreshold || 15;
+        const silenceDuration = options.silenceDuration || 1500;
 
         // Check if mediaDevices is available (requires HTTPS on iOS for non-localhost)
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -35,6 +52,46 @@ export class AudioRecorder {
                 noiseSuppression: true,
             }
         });
+
+        // Set up silence detection using Web Audio API
+        if (this.onSilenceDetected) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const source = this.audioContext.createMediaStreamSource(this.stream);
+            this.analyser = this.audioContext.createAnalyser();
+            this.analyser.fftSize = 256;
+            source.connect(this.analyser);
+
+            const bufferLength = this.analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            this.silenceDetectionInterval = setInterval(() => {
+                this.analyser.getByteFrequencyData(dataArray);
+
+                // Calculate average volume
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i];
+                }
+                const average = sum / bufferLength;
+
+                if (average > silenceThreshold) {
+                    // User is speaking
+                    this.hasSpoken = true;
+                    this.silenceStart = null;
+                } else if (this.hasSpoken) {
+                    // Silence detected after speech
+                    if (!this.silenceStart) {
+                        this.silenceStart = Date.now();
+                    } else if (Date.now() - this.silenceStart > silenceDuration) {
+                        // Silence duration exceeded, trigger callback
+                        console.log('Silence detected, auto-stopping');
+                        if (this.onSilenceDetected) {
+                            this.onSilenceDetected();
+                        }
+                    }
+                }
+            }, 100);
+        }
 
         // Find a supported mime type
         const mimeTypes = [
@@ -56,8 +113,8 @@ export class AudioRecorder {
 
         console.log('Using MediaRecorder mimeType:', mimeType || '(default)');
 
-        const options = mimeType ? { mimeType } : {};
-        this.mediaRecorder = new MediaRecorder(this.stream, options);
+        const mediaOptions = mimeType ? { mimeType } : {};
+        this.mediaRecorder = new MediaRecorder(this.stream, mediaOptions);
 
         this.mediaRecorder.ondataavailable = (event) => {
             console.log('Audio chunk received, size:', event.data.size);
@@ -68,7 +125,7 @@ export class AudioRecorder {
 
         // Request data every 250ms to ensure we get chunks even for short recordings
         this.mediaRecorder.start(250);
-        console.log('MediaRecorder started');
+        console.log('MediaRecorder started with silence detection:', !!this.onSilenceDetected);
     }
 
     /**
@@ -76,6 +133,21 @@ export class AudioRecorder {
      * @returns {Promise<Blob>}
      */
     async stop() {
+        // Clean up silence detection
+        if (this.silenceDetectionInterval) {
+            clearInterval(this.silenceDetectionInterval);
+            this.silenceDetectionInterval = null;
+        }
+        if (this.audioContext) {
+            try {
+                await this.audioContext.close();
+            } catch (e) {
+                // Ignore errors closing context
+            }
+            this.audioContext = null;
+        }
+        this.onSilenceDetected = null;
+
         return new Promise((resolve, reject) => {
             if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
                 // Stop all tracks to release microphone
