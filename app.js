@@ -408,7 +408,7 @@ function handleTranscription(transcript) {
         resultFeedback.textContent = result.feedback;
         resultScore.textContent = `${result.score}%`;
         resultTranscription.textContent = transcript || '(nothing detected)';
-        resultExpected.textContent = phrase.characters;
+        resultExpected.innerHTML = `${phrase.characters}<br><span style="font-size: 14px; color: var(--text-secondary);">${phrase.pinyin}</span>`;
 
         if (result.missedCharacters.length > 0) {
             resultMissing.textContent = `Missing: ${result.missedCharacters.join(' ')}`;
