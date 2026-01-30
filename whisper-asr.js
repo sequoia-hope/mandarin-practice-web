@@ -94,6 +94,9 @@ export async function transcribeAudio(audioFloat32, expectedPhrase = null) {
             task: 'transcribe',
             chunk_length_s: 30,
             stride_length_s: 5,
+            // Prevent repetition/hallucination
+            no_repeat_ngram_size: 3,
+            max_new_tokens: 128,
         };
 
         // Add prompt to guide transcription if expected phrase is provided
@@ -103,11 +106,56 @@ export async function transcribeAudio(audioFloat32, expectedPhrase = null) {
 
         const result = await transcriber(audioFloat32, options);
 
-        return {
-            text: result.text ? result.text.trim() : ''
-        };
+        let text = result.text ? result.text.trim() : '';
+
+        // Detect and handle repetition hallucinations
+        text = cleanRepetitions(text);
+
+        return { text };
     } catch (error) {
         console.error('Transcription error:', error);
         throw error;
     }
+}
+
+/**
+ * Clean up repetitive hallucinations from Whisper output
+ * @param {string} text - Raw transcription text
+ * @returns {string} - Cleaned text
+ */
+function cleanRepetitions(text) {
+    if (!text || text.length < 10) return text;
+
+    // Detect character-level repetition (e.g., "去去去去去去")
+    const charMatch = text.match(/^(.{1,4})\1{4,}/);
+    if (charMatch) {
+        console.log('Detected repetition hallucination, returning empty');
+        return '';
+    }
+
+    // Detect if a short phrase repeats many times
+    for (let len = 1; len <= 6; len++) {
+        const segment = text.slice(0, len);
+        const repeated = segment.repeat(Math.ceil(text.length / len)).slice(0, text.length);
+        if (repeated === text && text.length > len * 5) {
+            console.log('Detected phrase repetition, returning empty');
+            return '';
+        }
+    }
+
+    // If text is unreasonably long for a short phrase (>100 chars), likely hallucination
+    if (text.length > 100) {
+        // Check if mostly the same characters
+        const charCounts = {};
+        for (const char of text) {
+            charCounts[char] = (charCounts[char] || 0) + 1;
+        }
+        const maxCount = Math.max(...Object.values(charCounts));
+        if (maxCount > text.length * 0.5) {
+            console.log('Detected dominant character repetition, returning empty');
+            return '';
+        }
+    }
+
+    return text;
 }
