@@ -1818,9 +1818,63 @@
             background: var(--text-secondary);
             cursor: not-allowed;
         }
+
+        /* Update Banner */
+        .update-banner {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            color: white;
+            text-align: center;
+            padding: 6px 12px;
+            font-size: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .update-banner .time-ago {
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
+    <!-- Update timestamp banner for GitHub Pages cache debugging -->
+    <!-- BUILD_TIMESTAMP gets updated on each commit -->
+    <div id="updateBanner" class="update-banner" data-build-time="2026-01-31T22:25:23Z">
+        Last updated: <span id="updateTime" class="time-ago">loading...</span>
+    </div>
+    <script>
+        (function() {
+            const banner = document.getElementById('updateBanner');
+            const timeSpan = document.getElementById('updateTime');
+            const buildTime = new Date(banner.dataset.buildTime);
+
+            function updateTimeAgo() {
+                const now = new Date();
+                const diffMs = now - buildTime;
+                const diffSecs = Math.floor(diffMs / 1000);
+                const diffMins = Math.floor(diffSecs / 60);
+                const diffHours = Math.floor(diffMins / 60);
+                const diffDays = Math.floor(diffHours / 24);
+
+                let timeAgo;
+                if (diffSecs < 60) {
+                    timeAgo = diffSecs + ' second' + (diffSecs !== 1 ? 's' : '') + ' ago';
+                } else if (diffMins < 60) {
+                    timeAgo = diffMins + ' minute' + (diffMins !== 1 ? 's' : '') + ' ago';
+                } else if (diffHours < 24) {
+                    timeAgo = diffHours + ' hour' + (diffHours !== 1 ? 's' : '') + ' ago';
+                } else {
+                    timeAgo = diffDays + ' day' + (diffDays !== 1 ? 's' : '') + ' ago';
+                }
+
+                timeSpan.textContent = timeAgo;
+            }
+
+            updateTimeAgo();
+            setInterval(updateTimeAgo, 60000); // Update every minute
+        })();
+    </script>
+
     <div class="container">
         <!-- ASR Mode Switcher -->
         <div id="asrSwitcher" class="asr-switcher">
