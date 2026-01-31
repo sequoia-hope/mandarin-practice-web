@@ -1129,6 +1129,8 @@ function speakPhrase() {
         console.error('Audio play error:', err);
         button.disabled = false;
         button.innerHTML = '🔊 Listen';
+        // Fallback to browser TTS if audio file fails to play
+        speakPhraseFallback();
     });
 }
 
