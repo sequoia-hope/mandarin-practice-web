@@ -184,6 +184,53 @@ export class AudioRecorder {
     }
 
     /**
+     * Force stop recording and release all resources immediately
+     * Use this for cleanup on page navigation/visibility change
+     */
+    forceStop() {
+        // Clear silence detection
+        if (this.silenceDetectionInterval) {
+            clearInterval(this.silenceDetectionInterval);
+            this.silenceDetectionInterval = null;
+        }
+        this.onSilenceDetected = null;
+
+        // Close AudioContext
+        if (this.audioContext) {
+            try {
+                this.audioContext.close();
+            } catch (e) {
+                // Ignore errors
+            }
+            this.audioContext = null;
+        }
+
+        // Stop MediaRecorder
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+            try {
+                this.mediaRecorder.stop();
+            } catch (e) {
+                // Ignore errors
+            }
+        }
+        this.mediaRecorder = null;
+
+        // Stop all tracks to release microphone
+        if (this.stream) {
+            this.stream.getTracks().forEach(track => {
+                try {
+                    track.stop();
+                } catch (e) {
+                    // Ignore errors
+                }
+            });
+            this.stream = null;
+        }
+
+        this.audioChunks = [];
+    }
+
+    /**
      * Check if currently recording
      * @returns {boolean}
      */

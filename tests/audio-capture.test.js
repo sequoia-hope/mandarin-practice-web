@@ -216,6 +216,52 @@ describe('AudioRecorder', () => {
       expect(recorder.isRecording()).toBe(false);
     });
   });
+
+  describe('forceStop()', () => {
+    test('should release all resources immediately', async () => {
+      await recorder.start({ onSilenceDetected: jest.fn() });
+
+      const stream = recorder.stream;
+      const tracks = stream.getTracks();
+
+      recorder.forceStop();
+
+      // All tracks should be stopped
+      tracks.forEach(track => {
+        expect(track._stopped).toBe(true);
+      });
+
+      // All internal state should be cleared
+      expect(recorder.stream).toBeNull();
+      expect(recorder.mediaRecorder).toBeNull();
+      expect(recorder.silenceDetectionInterval).toBeNull();
+      expect(recorder.audioContext).toBeNull();
+    });
+
+    test('should be safe to call when not recording', () => {
+      expect(() => recorder.forceStop()).not.toThrow();
+    });
+
+    test('should be safe to call multiple times', async () => {
+      await recorder.start();
+
+      expect(() => {
+        recorder.forceStop();
+        recorder.forceStop();
+        recorder.forceStop();
+      }).not.toThrow();
+    });
+
+    test('should work even if some cleanup fails', async () => {
+      await recorder.start({ onSilenceDetected: jest.fn() });
+
+      // Corrupt internal state to simulate errors
+      recorder.mediaRecorder = { stop: () => { throw new Error('Stop failed'); }, state: 'recording' };
+
+      // Should not throw
+      expect(() => recorder.forceStop()).not.toThrow();
+    });
+  });
 });
 
 describe('resampleTo16kHz', () => {

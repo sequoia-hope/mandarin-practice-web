@@ -79,6 +79,64 @@ function initApp() {
 
     // Render stats
     renderStats();
+
+    // Set up cleanup handlers for mic release
+    setupCleanupHandlers();
+}
+
+/**
+ * Set up event handlers to clean up recording resources
+ * This prevents the microphone from staying open when:
+ * - User navigates away from the page
+ * - User switches tabs (page becomes hidden)
+ * - User closes the browser/tab
+ */
+function setupCleanupHandlers() {
+    // Clean up when page becomes hidden (tab switch, minimize, etc.)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && isRecording) {
+            console.log('Page hidden while recording, cleaning up...');
+            cleanupRecording();
+        }
+    });
+
+    // Clean up before page unload
+    window.addEventListener('beforeunload', () => {
+        if (isRecording) {
+            console.log('Page unloading while recording, cleaning up...');
+            cleanupRecording();
+        }
+    });
+
+    // Also clean up on pagehide (more reliable on mobile)
+    window.addEventListener('pagehide', () => {
+        if (isRecording) {
+            console.log('Page hiding while recording, cleaning up...');
+            cleanupRecording();
+        }
+    });
+}
+
+/**
+ * Force cleanup of all recording resources
+ */
+function cleanupRecording() {
+    // Stop Web Speech API recognition
+    if (recognition) {
+        try {
+            recognition.abort();
+        } catch (e) {
+            // Ignore errors
+        }
+    }
+
+    // Stop Whisper audio recorder
+    if (audioRecorder) {
+        audioRecorder.forceStop();
+    }
+
+    isRecording = false;
+    updateRecordButton();
 }
 
 function updateASRSwitcher() {
@@ -861,15 +919,61 @@ async function stopWhisperRecording() {
             return;
         }
 
-        // Resample to 16kHz for Whisper
+        // Safety check: reject very large audio blobs to prevent memory issues
+        const MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10MB max
+        if (audioBlob.size > MAX_AUDIO_SIZE) {
+            console.warn('Audio blob too large, skipping transcription');
+            hideLoading();
+            handleTranscription('');
+            return;
+        }
+
+        // Resample to 16kHz for Whisper with timeout protection
         console.log('Resampling audio...');
-        const audioFloat32 = await resampleTo16kHz(audioBlob);
+        let audioFloat32;
+        try {
+            audioFloat32 = await Promise.race([
+                resampleTo16kHz(audioBlob),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Resample timeout')), 30000)
+                )
+            ]);
+        } catch (resampleError) {
+            console.error('Resample error:', resampleError);
+            hideLoading();
+            handleTranscription('');
+            return;
+        }
         console.log('Audio resampled, length:', audioFloat32.length);
+
+        // Safety check: limit audio length to ~30 seconds at 16kHz
+        const MAX_SAMPLES = 16000 * 30;
+        if (audioFloat32.length > MAX_SAMPLES) {
+            console.warn('Audio too long, truncating to 30 seconds');
+            audioFloat32 = audioFloat32.slice(0, MAX_SAMPLES);
+        }
 
         // Run transcription with expected phrase as prompt
         const expectedPhrase = currentLesson?.phrases[currentPhraseIndex]?.characters;
         console.log('Running transcription with expected phrase:', expectedPhrase);
-        const result = await transcribeAudio(audioFloat32, expectedPhrase);
+
+        // Add timeout protection for transcription
+        let result;
+        try {
+            result = await Promise.race([
+                transcribeAudio(audioFloat32, expectedPhrase),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Transcription timeout')), 60000)
+                )
+            ]);
+        } catch (transcribeError) {
+            console.error('Transcription error:', transcribeError);
+            hideLoading();
+            if (currentLesson) {
+                handleTranscription('');
+            }
+            return;
+        }
         console.log('Transcription result:', result);
 
         hideLoading();
