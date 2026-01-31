@@ -120,6 +120,12 @@
             font-weight: 600;
         }
 
+        .lesson-pinyin {
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-style: italic;
+        }
+
         /* Lesson View */
         .lesson-view {
             display: none;
@@ -473,6 +479,186 @@
             background: var(--primary);
             color: white;
         }
+
+        /* Title with pinyin */
+        .title-pinyin {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: normal;
+        }
+
+        /* Matching Lesson Styles */
+        .matching-view {
+            display: none;
+        }
+
+        .matching-view:not(.hidden) {
+            display: block;
+        }
+
+        .speaking-view.hidden {
+            display: none;
+        }
+
+        .matching-progress {
+            margin-bottom: 24px;
+        }
+
+        .matching-instruction {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .matching-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .matching-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .column-header {
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 12px;
+            text-transform: uppercase;
+            padding: 8px;
+            background: var(--border);
+            border-radius: 8px;
+        }
+
+        .match-card {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .match-card:hover:not(.matched) {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .match-card.selected {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .match-card.matched {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+            opacity: 0.7;
+            cursor: default;
+        }
+
+        .match-card.correct-flash {
+            animation: correctPulse 0.5s ease;
+        }
+
+        .match-card.wrong-flash {
+            animation: wrongShake 0.5s ease;
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .card-main {
+            display: block;
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .character-card .card-main {
+            font-size: 24px;
+        }
+
+        .card-hint {
+            display: block;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .matching-complete {
+            text-align: center;
+            padding: 48px 24px;
+            background: var(--card);
+            border-radius: 16px;
+        }
+
+        .complete-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .matching-complete h3 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .matching-complete p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .primary-button {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 8px;
+            transition: background 0.2s;
+        }
+
+        .primary-button:hover {
+            background: #2563eb;
+        }
+
+        .secondary-button {
+            display: inline-block;
+            background: var(--card);
+            color: var(--text);
+            border: 2px solid var(--border);
+            padding: 10px 22px;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.2s;
+        }
+
+        .secondary-button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -506,56 +692,75 @@
 
             <h2 id="lessonTitle" style="margin-bottom: 16px;"></h2>
 
-            <div class="progress-bar">
-                <div id="progressFill" class="progress-fill" style="width: 0%"></div>
-            </div>
-            <div class="progress-text">
-                <span id="progressCompleted">0/0 completed</span>
-                <span id="progressCurrent">Phrase 1 of 1</span>
-            </div>
-
-            <div class="phrase-card">
-                <div id="phraseCharacters" class="phrase-characters">你好</div>
-                <div id="phrasePinyin" class="phrase-pinyin">nǐ hǎo</div>
-                <div id="phraseEnglish" class="phrase-english">Hello</div>
-                <button id="listenButton" class="listen-button" onclick="speakPhrase()">
-                    🔊 Listen
-                </button>
-            </div>
-
-            <div id="resultCard" class="result-card">
-                <div class="result-header">
-                    <div id="resultStatus" class="result-status">
-                        <span id="resultIcon">✓</span>
-                        <span id="resultFeedback">Perfect!</span>
-                    </div>
-                    <div id="resultScore" class="result-score">100%</div>
+            <!-- Speaking Lesson View -->
+            <div id="speakingView" class="speaking-view">
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill" style="width: 0%"></div>
                 </div>
-                <hr class="result-divider">
-                <div class="result-label">You said:</div>
-                <div id="resultTranscription" class="result-text">(nothing detected)</div>
-                <div class="result-label">Expected:</div>
-                <div id="resultExpected" class="result-text result-expected">你好</div>
-                <div id="resultMissing" class="result-missing"></div>
+                <div class="progress-text">
+                    <span id="progressCompleted">0/0 completed</span>
+                    <span id="progressCurrent">Phrase 1 of 1</span>
+                </div>
+
+                <div class="phrase-card">
+                    <div id="phraseCharacters" class="phrase-characters">你好</div>
+                    <div id="phrasePinyin" class="phrase-pinyin">nǐ hǎo</div>
+                    <div id="phraseEnglish" class="phrase-english">Hello</div>
+                    <button id="listenButton" class="listen-button" onclick="speakPhrase()">
+                        🔊 Listen
+                    </button>
+                </div>
+
+                <div id="resultCard" class="result-card">
+                    <div class="result-header">
+                        <div id="resultStatus" class="result-status">
+                            <span id="resultIcon">✓</span>
+                            <span id="resultFeedback">Perfect!</span>
+                        </div>
+                        <div id="resultScore" class="result-score">100%</div>
+                    </div>
+                    <hr class="result-divider">
+                    <div class="result-label">You said:</div>
+                    <div id="resultTranscription" class="result-text">(nothing detected)</div>
+                    <div class="result-label">Expected:</div>
+                    <div id="resultExpected" class="result-text result-expected">你好</div>
+                    <div id="resultMissing" class="result-missing"></div>
+                </div>
+
+                <div class="record-section">
+                    <button id="recordButton" class="record-button" onclick="toggleRecording()" disabled>
+                        🎤
+                    </button>
+                    <div id="recordHint" class="record-hint">Loading model...</div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button id="prevButton" class="nav-button" onclick="prevPhrase()" disabled>
+                        ← Previous
+                    </button>
+                    <button class="nav-button skip-button" onclick="nextPhrase()">
+                        Skip
+                    </button>
+                    <button id="nextButton" class="nav-button" onclick="nextPhrase()">
+                        Next →
+                    </button>
+                </div>
             </div>
 
-            <div class="record-section">
-                <button id="recordButton" class="record-button" onclick="toggleRecording()" disabled>
-                    🎤
-                </button>
-                <div id="recordHint" class="record-hint">Loading model...</div>
-            </div>
+            <!-- Matching Lesson View -->
+            <div id="matchingView" class="matching-view hidden">
+                <div class="matching-progress">
+                    <div class="progress-bar">
+                        <div id="matchingProgressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="matchingProgressText">0/0 matched</span>
+                    </div>
+                </div>
 
-            <div class="nav-buttons">
-                <button id="prevButton" class="nav-button" onclick="prevPhrase()" disabled>
-                    ← Previous
-                </button>
-                <button class="nav-button skip-button" onclick="nextPhrase()">
-                    Skip
-                </button>
-                <button id="nextButton" class="nav-button" onclick="nextPhrase()">
-                    Next →
-                </button>
+                <div id="matchingContainer">
+                    <!-- Matching cards will be rendered here -->
+                </div>
             </div>
         </div>
     </div>

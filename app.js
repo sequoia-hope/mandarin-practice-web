@@ -59,19 +59,25 @@ function updateASRSwitcher() {
 
 function renderLessonList() {
     const container = document.getElementById('lessonList');
-    container.innerHTML = CURRICULUM.map((lesson, index) => `
+    container.innerHTML = CURRICULUM.map((lesson, index) => {
+        const lessonType = lesson.type || 'speaking';
+        const typeLabel = lessonType === 'matching' ? 'match' : 'speak';
+        const typeIcon = lessonType === 'matching' ? '🔗' : '🎤';
+        return `
         <div class="lesson-card" onclick="startLesson(${index})">
             <div class="lesson-number">${index + 1}</div>
             <div class="lesson-info">
                 <div class="lesson-title">${lesson.icon} ${lesson.title}</div>
                 <div class="lesson-chinese">${lesson.titleChinese}</div>
+                <div class="lesson-pinyin">${lesson.titlePinyin || ''}</div>
             </div>
             <div class="lesson-count">
                 <span>${lesson.phrases.length}</span>
-                phrases
+                ${typeLabel} ${typeIcon}
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // ============================================
@@ -509,22 +515,41 @@ function startLesson(index) {
     currentLesson = CURRICULUM[index];
     currentPhraseIndex = 0;
     completedPhrases = new Set();
-    
+
     document.getElementById('menuView').classList.add('hidden');
     document.getElementById('lessonView').classList.add('active');
-    
-    updateLessonUI();
+
+    // Check lesson type and show appropriate view
+    const lessonType = currentLesson.type || 'speaking';
+    if (lessonType === 'matching') {
+        document.getElementById('speakingView').classList.add('hidden');
+        document.getElementById('matchingView').classList.remove('hidden');
+        initMatchingLesson();
+    } else {
+        document.getElementById('speakingView').classList.remove('hidden');
+        document.getElementById('matchingView').classList.add('hidden');
+        updateLessonUI();
+    }
 }
 
 function showMenu() {
     document.getElementById('menuView').classList.remove('hidden');
     document.getElementById('lessonView').classList.remove('active');
     document.getElementById('resultCard').classList.remove('visible');
-    
+
+    // Reset both views
+    document.getElementById('speakingView').classList.remove('hidden');
+    document.getElementById('matchingView').classList.add('hidden');
+
     // Stop any ongoing recording
     if (isRecording) {
         stopRecording();
     }
+
+    // Reset matching state
+    matchedPairs = new Set();
+    selectedCharacter = null;
+    selectedPinyin = null;
 }
 
 function nextPhrase() {
@@ -543,24 +568,25 @@ function prevPhrase() {
 
 function updateLessonUI() {
     const phrase = currentLesson.phrases[currentPhraseIndex];
-    
-    // Update lesson title
-    document.getElementById('lessonTitle').textContent = 
-        `${currentLesson.icon} ${currentLesson.titleChinese}`;
-    
+
+    // Update lesson title with pinyin
+    const titlePinyin = currentLesson.titlePinyin ? ` <span class="title-pinyin">(${currentLesson.titlePinyin})</span>` : '';
+    document.getElementById('lessonTitle').innerHTML =
+        `${currentLesson.icon} ${currentLesson.titleChinese}${titlePinyin}`;
+
     // Update phrase card
     document.getElementById('phraseCharacters').textContent = phrase.characters;
     document.getElementById('phrasePinyin').textContent = phrase.pinyin;
     document.getElementById('phraseEnglish').textContent = phrase.english;
-    
+
     // Hide result card
     document.getElementById('resultCard').classList.remove('visible');
-    
+
     // Update navigation buttons
     document.getElementById('prevButton').disabled = currentPhraseIndex === 0;
-    document.getElementById('nextButton').disabled = 
+    document.getElementById('nextButton').disabled =
         currentPhraseIndex === currentLesson.phrases.length - 1;
-    
+
     // Update progress
     updateProgress();
 }
@@ -591,6 +617,187 @@ function hideLoading() {
 }
 
 // ============================================
+// Matching Lesson Logic
+// ============================================
+
+let matchingPairs = [];
+let selectedCharacter = null;
+let selectedPinyin = null;
+let matchedPairs = new Set();
+
+function initMatchingLesson() {
+    // Reset state
+    matchingPairs = [...currentLesson.phrases];
+    selectedCharacter = null;
+    selectedPinyin = null;
+    matchedPairs = new Set();
+
+    // Update lesson title with pinyin
+    const titlePinyin = currentLesson.titlePinyin ? ` <span class="title-pinyin">(${currentLesson.titlePinyin})</span>` : '';
+    document.getElementById('lessonTitle').innerHTML =
+        `${currentLesson.icon} ${currentLesson.titleChinese}${titlePinyin}`;
+
+    renderMatchingCards();
+    updateMatchingProgress();
+}
+
+function renderMatchingCards() {
+    const container = document.getElementById('matchingContainer');
+
+    // Shuffle the characters and pinyin separately for the game
+    const characters = matchingPairs.map((p, i) => ({ index: i, value: p.characters, pinyin: p.pinyin, english: p.english }));
+    const pinyins = matchingPairs.map((p, i) => ({ index: i, value: p.pinyin }));
+
+    // Shuffle arrays
+    shuffleArray(characters);
+    shuffleArray(pinyins);
+
+    container.innerHTML = `
+        <div class="matching-instruction">
+            Tap a character, then tap its pinyin to match
+        </div>
+        <div class="matching-columns">
+            <div class="matching-column" id="characterColumn">
+                <div class="column-header">Characters 汉字</div>
+                ${characters.map(c => `
+                    <div class="match-card character-card ${matchedPairs.has(c.index) ? 'matched' : ''}"
+                         data-index="${c.index}"
+                         data-pinyin="${c.pinyin}"
+                         onclick="selectCharacter(${c.index}, '${escapeHtml(c.pinyin)}')">
+                        <span class="card-main">${c.value}</span>
+                        <span class="card-hint">${c.english}</span>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="matching-column" id="pinyinColumn">
+                <div class="column-header">Pinyin 拼音</div>
+                ${pinyins.map(p => `
+                    <div class="match-card pinyin-card ${matchedPairs.has(p.index) ? 'matched' : ''}"
+                         data-index="${p.index}"
+                         onclick="selectPinyin(${p.index}, '${escapeHtml(p.value)}')">
+                        <span class="card-main">${p.value}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function escapeHtml(text) {
+    return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function selectCharacter(index, pinyin) {
+    if (matchedPairs.has(index)) return;
+
+    // Clear previous selection
+    document.querySelectorAll('.character-card').forEach(card => card.classList.remove('selected'));
+
+    // Select this card
+    const card = document.querySelector(`.character-card[data-index="${index}"]`);
+    card.classList.add('selected');
+
+    selectedCharacter = { index, pinyin };
+
+    // Check for match if pinyin is also selected
+    checkMatch();
+}
+
+function selectPinyin(index, value) {
+    if (matchedPairs.has(index)) return;
+
+    // Clear previous selection
+    document.querySelectorAll('.pinyin-card').forEach(card => card.classList.remove('selected'));
+
+    // Select this card
+    const card = document.querySelector(`.pinyin-card[data-index="${index}"]`);
+    card.classList.add('selected');
+
+    selectedPinyin = { index, value };
+
+    // Check for match if character is also selected
+    checkMatch();
+}
+
+function checkMatch() {
+    if (!selectedCharacter || !selectedPinyin) return;
+
+    const charCard = document.querySelector(`.character-card[data-index="${selectedCharacter.index}"]`);
+    const pinyinCard = document.querySelector(`.pinyin-card[data-index="${selectedPinyin.index}"]`);
+
+    if (selectedCharacter.index === selectedPinyin.index) {
+        // Correct match!
+        matchedPairs.add(selectedCharacter.index);
+        charCard.classList.remove('selected');
+        charCard.classList.add('matched', 'correct-flash');
+        pinyinCard.classList.remove('selected');
+        pinyinCard.classList.add('matched', 'correct-flash');
+
+        // Remove flash after animation
+        setTimeout(() => {
+            charCard.classList.remove('correct-flash');
+            pinyinCard.classList.remove('correct-flash');
+        }, 500);
+
+        updateMatchingProgress();
+
+        // Check if lesson complete
+        if (matchedPairs.size === matchingPairs.length) {
+            setTimeout(() => {
+                showMatchingComplete();
+            }, 600);
+        }
+    } else {
+        // Wrong match - flash red and reset
+        charCard.classList.add('wrong-flash');
+        pinyinCard.classList.add('wrong-flash');
+
+        setTimeout(() => {
+            charCard.classList.remove('selected', 'wrong-flash');
+            pinyinCard.classList.remove('selected', 'wrong-flash');
+        }, 500);
+    }
+
+    // Reset selection
+    selectedCharacter = null;
+    selectedPinyin = null;
+}
+
+function updateMatchingProgress() {
+    const total = matchingPairs.length;
+    const completed = matchedPairs.size;
+    const percent = (completed / total) * 100;
+
+    document.getElementById('matchingProgressFill').style.width = `${percent}%`;
+    document.getElementById('matchingProgressText').textContent = `${completed}/${total} matched`;
+}
+
+function showMatchingComplete() {
+    const container = document.getElementById('matchingContainer');
+    container.innerHTML = `
+        <div class="matching-complete">
+            <div class="complete-icon">🎉</div>
+            <h3>Great job!</h3>
+            <p>You matched all ${matchingPairs.length} pairs correctly!</p>
+            <button class="primary-button" onclick="restartMatching()">Practice Again</button>
+            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+        </div>
+    `;
+}
+
+function restartMatching() {
+    initMatchingLesson();
+}
+
+// ============================================
 // Global Exports (for onclick handlers in HTML)
 // ============================================
 
@@ -600,3 +807,6 @@ window.speakPhrase = speakPhrase;
 window.toggleRecording = toggleRecording;
 window.prevPhrase = prevPhrase;
 window.nextPhrase = nextPhrase;
+window.selectCharacter = selectCharacter;
+window.selectPinyin = selectPinyin;
+window.restartMatching = restartMatching;
