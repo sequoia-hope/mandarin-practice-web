@@ -1101,9 +1101,15 @@ function speakPhrase() {
         currentAudio.currentTime = 0;
     }
 
-    // Get the audio file path: audio/lesson{id}_phrase{index}.mp3
-    const lessonId = currentLesson.id;
-    const audioPath = `audio/lesson${lessonId}_phrase${currentPhraseIndex}.mp3`;
+    // Determine the audio file path based on lesson type
+    let audioPath;
+    if (currentDay && currentLesson.type === 'speaking') {
+        // Daily curriculum speaking lesson: audio/day{N}_speaking_phrase{index}.mp3
+        audioPath = `audio/day${currentDay.day}_speaking_phrase${currentPhraseIndex}.mp3`;
+    } else {
+        // Original curriculum: audio/lesson{id}_phrase{index}.mp3
+        audioPath = `audio/lesson${currentLesson.id}_phrase${currentPhraseIndex}.mp3`;
+    }
 
     console.log('Playing audio:', audioPath);
 
