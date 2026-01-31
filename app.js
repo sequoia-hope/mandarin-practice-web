@@ -83,6 +83,18 @@ function renderLessonList() {
             } else {
                 progressDisplay = `${lesson.phrases.length} match 🔗`;
             }
+        } else if (lessonType === 'cloze') {
+            const completed = lessonProgress.completedPhrases.length;
+            const total = lesson.sentences ? lesson.sentences.length : 0;
+            if (completed === total && total > 0) {
+                progressDisplay = '✓';
+                progressClass = 'completed';
+            } else if (completed > 0) {
+                progressDisplay = `${completed}/${total} 📝`;
+                progressClass = 'in-progress';
+            } else {
+                progressDisplay = `${total} fill 📝`;
+            }
         } else {
             const completed = lessonProgress.completedPhrases.length;
             const total = lesson.phrases.length;
@@ -593,15 +605,21 @@ function startLesson(index) {
     document.getElementById('menuView').classList.add('hidden');
     document.getElementById('lessonView').classList.add('active');
 
+    // Hide all lesson type views first
+    document.getElementById('speakingView').classList.add('hidden');
+    document.getElementById('matchingView').classList.add('hidden');
+    document.getElementById('clozeView').classList.add('hidden');
+
     // Check lesson type and show appropriate view
     const lessonType = currentLesson.type || 'speaking';
     if (lessonType === 'matching') {
-        document.getElementById('speakingView').classList.add('hidden');
         document.getElementById('matchingView').classList.remove('hidden');
         initMatchingLesson();
+    } else if (lessonType === 'cloze') {
+        document.getElementById('clozeView').classList.remove('hidden');
+        initClozeLesson();
     } else {
         document.getElementById('speakingView').classList.remove('hidden');
-        document.getElementById('matchingView').classList.add('hidden');
         updateLessonUI();
     }
 }
@@ -611,9 +629,10 @@ function showMenu() {
     document.getElementById('lessonView').classList.remove('active');
     document.getElementById('resultCard').classList.remove('visible');
 
-    // Reset both views
+    // Reset all views
     document.getElementById('speakingView').classList.remove('hidden');
     document.getElementById('matchingView').classList.add('hidden');
+    document.getElementById('clozeView').classList.add('hidden');
 
     // Stop any ongoing recording
     if (isRecording) {
@@ -624,6 +643,11 @@ function showMenu() {
     matchedPairs = new Set();
     selectedCharacter = null;
     selectedPinyin = null;
+
+    // Reset cloze state
+    clozeSentenceIndex = 0;
+    clozeFilledBlanks = [];
+    clozeCorrectCount = 0;
 
     // Refresh lesson list to show updated progress
     renderLessonList();
@@ -895,6 +919,277 @@ function restartMatching() {
 }
 
 // ============================================
+// Cloze (Fill-in-the-blank) Lesson Logic
+// ============================================
+
+let clozeSentenceIndex = 0;
+let clozeFilledBlanks = [];  // Array of filled answers for current sentence
+let clozeCorrectCount = 0;
+let clozeStartTime = null;
+
+function initClozeLesson() {
+    // Reset state
+    clozeSentenceIndex = 0;
+    clozeFilledBlanks = [];
+    clozeCorrectCount = 0;
+    clozeStartTime = Date.now();
+
+    // Update lesson title with pinyin
+    const titlePinyin = currentLesson.titlePinyin ? ` <span class="title-pinyin">(${currentLesson.titlePinyin})</span>` : '';
+    document.getElementById('lessonTitle').innerHTML =
+        `${currentLesson.icon} ${currentLesson.titleChinese}${titlePinyin}`;
+
+    // Render vocabulary review
+    renderVocabReview();
+
+    // Render first sentence
+    renderClozeSentence();
+    updateClozeProgress();
+}
+
+function renderVocabReview() {
+    const container = document.getElementById('vocabReview');
+    const vocab = currentLesson.vocabulary || [];
+
+    if (vocab.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    container.innerHTML = `
+        <h4>Words to Practice</h4>
+        <div class="vocab-grid">
+            ${vocab.map(v => `
+                <div class="vocab-item">
+                    <div class="vocab-item-word">${v.word}</div>
+                    <div class="vocab-item-pinyin">${v.pinyin}</div>
+                    <div class="vocab-item-english">${v.english}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function renderClozeSentence() {
+    const container = document.getElementById('clozeContainer');
+    const sentence = currentLesson.sentences[clozeSentenceIndex];
+
+    // Reset filled blanks for this sentence
+    clozeFilledBlanks = new Array(sentence.answers.length).fill(null);
+
+    // Parse template to create display with blanks
+    const sentenceHtml = createSentenceWithBlanks(sentence.template, sentence.answers);
+
+    // Create word choices (answers + distractors, shuffled)
+    const allChoices = [...sentence.answers, ...sentence.distractors];
+    // Get pinyin for choices from vocabulary
+    const vocab = currentLesson.vocabulary || [];
+    const choicesWithPinyin = allChoices.map(word => {
+        const vocabItem = vocab.find(v => v.word === word);
+        return {
+            word,
+            pinyin: vocabItem ? vocabItem.pinyin : ''
+        };
+    });
+    shuffleArray(choicesWithPinyin);
+
+    container.innerHTML = `
+        <div class="cloze-card">
+            <div class="cloze-listen">
+                <button class="listen-button" onclick="speakClozeSentence()">
+                    🔊 Listen
+                </button>
+            </div>
+            <div id="clozeSentence" class="cloze-sentence">
+                ${sentenceHtml}
+            </div>
+            <div class="cloze-pinyin">${sentence.pinyin}</div>
+            <div class="cloze-english">${sentence.english}</div>
+        </div>
+
+        <div class="word-choices" id="wordChoices">
+            ${choicesWithPinyin.map((c, i) => `
+                <button class="word-choice" data-word="${c.word}" data-index="${i}" onclick="selectClozeWord('${c.word}', ${i})">
+                    ${c.word}
+                    ${c.pinyin ? `<span class="word-choice-pinyin">${c.pinyin}</span>` : ''}
+                </button>
+            `).join('')}
+        </div>
+
+        <div id="clozeFeedback" class="cloze-feedback"></div>
+
+        <div class="cloze-next" id="clozeNextContainer" style="display: none;">
+            <button class="primary-button" onclick="nextClozeSentence()">
+                Next Sentence →
+            </button>
+        </div>
+    `;
+}
+
+function createSentenceWithBlanks(template, answers) {
+    // Replace {0}, {1}, etc. with blank spans
+    let result = template;
+    for (let i = answers.length - 1; i >= 0; i--) {
+        const placeholder = `{${i}}`;
+        const blankHtml = `<span class="cloze-blank" data-blank-index="${i}" id="clozeBlank${i}"></span>`;
+        result = result.replace(placeholder, blankHtml);
+    }
+    return result;
+}
+
+function selectClozeWord(word, buttonIndex) {
+    const sentence = currentLesson.sentences[clozeSentenceIndex];
+    const button = document.querySelector(`.word-choice[data-index="${buttonIndex}"]`);
+
+    // Check if already used
+    if (button.classList.contains('used')) return;
+
+    // Find the first unfilled blank
+    const nextBlankIndex = clozeFilledBlanks.findIndex(b => b === null);
+    if (nextBlankIndex === -1) return; // All blanks filled
+
+    // Fill the blank
+    clozeFilledBlanks[nextBlankIndex] = word;
+    const blankEl = document.getElementById(`clozeBlank${nextBlankIndex}`);
+    blankEl.textContent = word;
+    blankEl.classList.add('filled');
+
+    // Mark button as used
+    button.classList.add('used');
+
+    // Check if all blanks are filled
+    if (!clozeFilledBlanks.includes(null)) {
+        checkClozeAnswer();
+    }
+}
+
+function checkClozeAnswer() {
+    const sentence = currentLesson.sentences[clozeSentenceIndex];
+    const feedback = document.getElementById('clozeFeedback');
+    const nextContainer = document.getElementById('clozeNextContainer');
+
+    // Check each blank
+    let allCorrect = true;
+    for (let i = 0; i < sentence.answers.length; i++) {
+        const blankEl = document.getElementById(`clozeBlank${i}`);
+        if (clozeFilledBlanks[i] === sentence.answers[i]) {
+            blankEl.classList.add('correct');
+        } else {
+            blankEl.classList.add('incorrect');
+            allCorrect = false;
+        }
+    }
+
+    // Show feedback
+    if (allCorrect) {
+        clozeCorrectCount++;
+        feedback.textContent = '✓ Correct!';
+        feedback.className = 'cloze-feedback visible correct';
+
+        // Record progress
+        recordSpeakingAttempt(currentLesson.id, clozeSentenceIndex, 100, true);
+    } else {
+        feedback.innerHTML = `✗ Not quite. The answer was: <strong>${sentence.answers.join(', ')}</strong>`;
+        feedback.className = 'cloze-feedback visible incorrect';
+
+        // Record attempt
+        recordSpeakingAttempt(currentLesson.id, clozeSentenceIndex, 0, false);
+    }
+
+    // Disable all word choice buttons
+    document.querySelectorAll('.word-choice').forEach(btn => {
+        btn.classList.add('disabled');
+    });
+
+    // Show next button
+    nextContainer.style.display = 'flex';
+    updateClozeProgress();
+}
+
+function nextClozeSentence() {
+    clozeSentenceIndex++;
+
+    if (clozeSentenceIndex >= currentLesson.sentences.length) {
+        showClozeComplete();
+    } else {
+        renderClozeSentence();
+        updateClozeProgress();
+    }
+}
+
+function updateClozeProgress() {
+    const total = currentLesson.sentences.length;
+    const completed = clozeSentenceIndex;
+    const percent = (completed / total) * 100;
+
+    document.getElementById('clozeProgressFill').style.width = `${percent}%`;
+    document.getElementById('clozeProgressText').textContent = `${completed}/${total} completed`;
+}
+
+function showClozeComplete() {
+    const container = document.getElementById('clozeContainer');
+    const total = currentLesson.sentences.length;
+    const score = Math.round((clozeCorrectCount / total) * 100);
+
+    // Calculate time
+    const timeSeconds = Math.round((Date.now() - clozeStartTime) / 1000);
+    const minutes = Math.floor(timeSeconds / 60);
+    const seconds = timeSeconds % 60;
+    const timeDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+    // Hide vocab review
+    document.getElementById('vocabReview').style.display = 'none';
+
+    container.innerHTML = `
+        <div class="matching-complete">
+            <div class="complete-icon">${score >= 80 ? '🏆' : score >= 50 ? '🎉' : '📚'}</div>
+            <h3>${score >= 80 ? 'Excellent!' : score >= 50 ? 'Good job!' : 'Keep practicing!'}</h3>
+            <p>You got <strong>${clozeCorrectCount}/${total}</strong> sentences correct</p>
+            <p>Score: <strong>${score}%</strong></p>
+            <p class="best-time">Time: ${timeDisplay}</p>
+            <button class="primary-button" onclick="restartCloze()">Practice Again</button>
+            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+        </div>
+    `;
+
+    // Update progress bar to 100%
+    document.getElementById('clozeProgressFill').style.width = '100%';
+    document.getElementById('clozeProgressText').textContent = `${total}/${total} completed`;
+}
+
+function restartCloze() {
+    initClozeLesson();
+}
+
+function speakClozeSentence() {
+    const sentence = currentLesson.sentences[clozeSentenceIndex];
+
+    // Build full sentence from template and answers
+    let fullSentence = sentence.template;
+    for (let i = 0; i < sentence.answers.length; i++) {
+        fullSentence = fullSentence.replace(`{${i}}`, sentence.answers[i]);
+    }
+
+    // Use browser TTS
+    if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(fullSentence);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.8;
+
+        const voices = speechSynthesis.getVoices();
+        const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
+        if (chineseVoice) {
+            utterance.voice = chineseVoice;
+        }
+
+        speechSynthesis.speak(utterance);
+    }
+}
+
+// ============================================
 // Global Exports (for onclick handlers in HTML)
 // ============================================
 
@@ -907,3 +1202,7 @@ window.nextPhrase = nextPhrase;
 window.selectCharacter = selectCharacter;
 window.selectPinyin = selectPinyin;
 window.restartMatching = restartMatching;
+window.selectClozeWord = selectClozeWord;
+window.nextClozeSentence = nextClozeSentence;
+window.restartCloze = restartCloze;
+window.speakClozeSentence = speakClozeSentence;

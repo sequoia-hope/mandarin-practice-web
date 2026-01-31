@@ -3,6 +3,7 @@
 // Lesson types:
 // - "speaking" (default): Practice speaking phrases with ASR feedback
 // - "matching": Match characters to their pinyin
+// - "cloze": Fill-in-the-blank with audio and word choices
 
 const CURRICULUM = [
     // Lesson 1: Introductions
@@ -349,6 +350,297 @@ const CURRICULUM = [
             { characters: "饭店", pinyin: "fàndiàn", english: "restaurant, hotel" },
             { characters: "公司", pinyin: "gōngsī", english: "company" },
             { characters: "公园", pinyin: "gōngyuán", english: "park" },
+        ]
+    },
+
+    // ============================================
+    // Fill-in-the-Blank Lessons (Cloze)
+    // ============================================
+
+    // Lesson 17: HSK1 Basic Verbs in Context
+    {
+        id: 17,
+        type: "cloze",
+        title: "HSK1 Verbs in Sentences",
+        titleChinese: "动词填空",
+        titlePinyin: "dòngcí tiánkòng",
+        icon: "📝",
+        description: "Fill in missing verbs (HSK1)",
+        hskLevel: 1,
+        // Vocabulary being practiced
+        vocabulary: [
+            { word: "吃", pinyin: "chī", english: "to eat" },
+            { word: "喝", pinyin: "hē", english: "to drink" },
+            { word: "看", pinyin: "kàn", english: "to look/watch" },
+            { word: "听", pinyin: "tīng", english: "to listen" },
+            { word: "说", pinyin: "shuō", english: "to speak" },
+            { word: "买", pinyin: "mǎi", english: "to buy" },
+        ],
+        sentences: [
+            // Single blank sentences (Phase 1)
+            {
+                template: "我想{0}饭。",
+                pinyin: "wǒ xiǎng chī fàn.",
+                english: "I want to eat.",
+                answers: ["吃"],
+                distractors: ["喝", "看", "说"]
+            },
+            {
+                template: "她{0}茶。",
+                pinyin: "tā hē chá.",
+                english: "She drinks tea.",
+                answers: ["喝"],
+                distractors: ["吃", "买", "看"]
+            },
+            {
+                template: "我们{0}电视。",
+                pinyin: "wǒmen kàn diànshì.",
+                english: "We watch TV.",
+                answers: ["看"],
+                distractors: ["听", "说", "吃"]
+            },
+            {
+                template: "他{0}音乐。",
+                pinyin: "tā tīng yīnyuè.",
+                english: "He listens to music.",
+                answers: ["听"],
+                distractors: ["看", "说", "喝"]
+            },
+            {
+                template: "你{0}中文吗？",
+                pinyin: "nǐ shuō zhōngwén ma?",
+                english: "Do you speak Chinese?",
+                answers: ["说"],
+                distractors: ["听", "看", "吃"]
+            },
+            {
+                template: "我要{0}书。",
+                pinyin: "wǒ yào mǎi shū.",
+                english: "I want to buy a book.",
+                answers: ["买"],
+                distractors: ["看", "吃", "说"]
+            },
+            // Multi-blank sentences (Phase 2)
+            {
+                template: "我{0}咖啡，他{1}茶。",
+                pinyin: "wǒ hē kāfēi, tā hē chá.",
+                english: "I drink coffee, he drinks tea.",
+                answers: ["喝", "喝"],
+                distractors: ["吃", "看"]
+            },
+            {
+                template: "她{0}书，我{1}电视。",
+                pinyin: "tā kàn shū, wǒ kàn diànshì.",
+                english: "She reads a book, I watch TV.",
+                answers: ["看", "看"],
+                distractors: ["听", "说"]
+            },
+        ]
+    },
+
+    // Lesson 18: HSK1 Pronouns & Questions
+    {
+        id: 18,
+        type: "cloze",
+        title: "HSK1 Pronouns Practice",
+        titleChinese: "代词练习",
+        titlePinyin: "dàicí liànxí",
+        icon: "👥",
+        description: "Fill in pronouns and question words (HSK1)",
+        hskLevel: 1,
+        vocabulary: [
+            { word: "我", pinyin: "wǒ", english: "I/me" },
+            { word: "你", pinyin: "nǐ", english: "you" },
+            { word: "他", pinyin: "tā", english: "he/him" },
+            { word: "她", pinyin: "tā", english: "she/her" },
+            { word: "什么", pinyin: "shénme", english: "what" },
+            { word: "哪里", pinyin: "nǎlǐ", english: "where" },
+        ],
+        sentences: [
+            {
+                template: "{0}叫什么名字？",
+                pinyin: "nǐ jiào shénme míngzì?",
+                english: "What is your name?",
+                answers: ["你"],
+                distractors: ["我", "他", "她"]
+            },
+            {
+                template: "{0}是学生。",
+                pinyin: "wǒ shì xuéshēng.",
+                english: "I am a student.",
+                answers: ["我"],
+                distractors: ["你", "他", "她"]
+            },
+            {
+                template: "{0}很漂亮。",
+                pinyin: "tā hěn piàoliang.",
+                english: "She is very beautiful.",
+                answers: ["她"],
+                distractors: ["他", "我", "你"]
+            },
+            {
+                template: "这是{0}？",
+                pinyin: "zhè shì shénme?",
+                english: "What is this?",
+                answers: ["什么"],
+                distractors: ["哪里", "你", "他"]
+            },
+            {
+                template: "你去{0}？",
+                pinyin: "nǐ qù nǎlǐ?",
+                english: "Where are you going?",
+                answers: ["哪里"],
+                distractors: ["什么", "他", "她"]
+            },
+            {
+                template: "{0}在做{1}？",
+                pinyin: "tā zài zuò shénme?",
+                english: "What is he doing?",
+                answers: ["他", "什么"],
+                distractors: ["她", "哪里"]
+            },
+        ]
+    },
+
+    // Lesson 19: HSK2 Daily Activities
+    {
+        id: 19,
+        type: "cloze",
+        title: "HSK2 Daily Activities",
+        titleChinese: "日常活动",
+        titlePinyin: "rìcháng huódòng",
+        icon: "🌅",
+        description: "Fill in daily activity words (HSK2)",
+        hskLevel: 2,
+        vocabulary: [
+            { word: "起床", pinyin: "qǐchuáng", english: "to get up" },
+            { word: "睡觉", pinyin: "shuìjiào", english: "to sleep" },
+            { word: "工作", pinyin: "gōngzuò", english: "to work" },
+            { word: "学习", pinyin: "xuéxí", english: "to study" },
+            { word: "休息", pinyin: "xiūxi", english: "to rest" },
+            { word: "运动", pinyin: "yùndòng", english: "to exercise" },
+        ],
+        sentences: [
+            {
+                template: "我早上六点{0}。",
+                pinyin: "wǒ zǎoshang liù diǎn qǐchuáng.",
+                english: "I get up at 6 in the morning.",
+                answers: ["起床"],
+                distractors: ["睡觉", "工作", "运动"]
+            },
+            {
+                template: "我晚上十一点{0}。",
+                pinyin: "wǒ wǎnshang shíyī diǎn shuìjiào.",
+                english: "I go to sleep at 11 at night.",
+                answers: ["睡觉"],
+                distractors: ["起床", "休息", "学习"]
+            },
+            {
+                template: "他每天{0}八个小时。",
+                pinyin: "tā měitiān gōngzuò bā gè xiǎoshí.",
+                english: "He works eight hours every day.",
+                answers: ["工作"],
+                distractors: ["学习", "休息", "运动"]
+            },
+            {
+                template: "我在图书馆{0}。",
+                pinyin: "wǒ zài túshūguǎn xuéxí.",
+                english: "I study at the library.",
+                answers: ["学习"],
+                distractors: ["工作", "休息", "睡觉"]
+            },
+            {
+                template: "周末我喜欢{0}。",
+                pinyin: "zhōumò wǒ xǐhuān xiūxi.",
+                english: "I like to rest on weekends.",
+                answers: ["休息"],
+                distractors: ["工作", "学习", "起床"]
+            },
+            {
+                template: "早上{0}，晚上{1}。",
+                pinyin: "zǎoshang qǐchuáng, wǎnshang shuìjiào.",
+                english: "Get up in the morning, sleep at night.",
+                answers: ["起床", "睡觉"],
+                distractors: ["工作", "运动"]
+            },
+            {
+                template: "我每天{0}和{1}。",
+                pinyin: "wǒ měitiān gōngzuò hé xuéxí.",
+                english: "I work and study every day.",
+                answers: ["工作", "学习"],
+                distractors: ["休息", "睡觉"]
+            },
+        ]
+    },
+
+    // Lesson 20: HSK2 Locations & Directions
+    {
+        id: 20,
+        type: "cloze",
+        title: "HSK2 Going Places",
+        titleChinese: "去哪里",
+        titlePinyin: "qù nǎlǐ",
+        icon: "🗺️",
+        description: "Fill in location words (HSK2)",
+        hskLevel: 2,
+        vocabulary: [
+            { word: "学校", pinyin: "xuéxiào", english: "school" },
+            { word: "医院", pinyin: "yīyuàn", english: "hospital" },
+            { word: "超市", pinyin: "chāoshì", english: "supermarket" },
+            { word: "银行", pinyin: "yínháng", english: "bank" },
+            { word: "机场", pinyin: "jīchǎng", english: "airport" },
+            { word: "饭店", pinyin: "fàndiàn", english: "restaurant" },
+        ],
+        sentences: [
+            {
+                template: "孩子们去{0}上课。",
+                pinyin: "háizimen qù xuéxiào shàngkè.",
+                english: "The children go to school for class.",
+                answers: ["学校"],
+                distractors: ["医院", "超市", "银行"]
+            },
+            {
+                template: "他生病了，去{0}。",
+                pinyin: "tā shēngbìng le, qù yīyuàn.",
+                english: "He is sick, going to the hospital.",
+                answers: ["医院"],
+                distractors: ["学校", "超市", "饭店"]
+            },
+            {
+                template: "我去{0}买东西。",
+                pinyin: "wǒ qù chāoshì mǎi dōngxi.",
+                english: "I go to the supermarket to buy things.",
+                answers: ["超市"],
+                distractors: ["银行", "学校", "机场"]
+            },
+            {
+                template: "我去{0}取钱。",
+                pinyin: "wǒ qù yínháng qǔ qián.",
+                english: "I go to the bank to withdraw money.",
+                answers: ["银行"],
+                distractors: ["超市", "医院", "饭店"]
+            },
+            {
+                template: "飞机在{0}。",
+                pinyin: "fēijī zài jīchǎng.",
+                english: "The airplane is at the airport.",
+                answers: ["机场"],
+                distractors: ["学校", "超市", "银行"]
+            },
+            {
+                template: "我们去{0}吃饭。",
+                pinyin: "wǒmen qù fàndiàn chīfàn.",
+                english: "We go to the restaurant to eat.",
+                answers: ["饭店"],
+                distractors: ["超市", "医院", "学校"]
+            },
+            {
+                template: "早上去{0}，下午去{1}。",
+                pinyin: "zǎoshang qù xuéxiào, xiàwǔ qù chāoshì.",
+                english: "Go to school in the morning, go to supermarket in the afternoon.",
+                answers: ["学校", "超市"],
+                distractors: ["医院", "银行"]
+            },
         ]
     },
 ];
