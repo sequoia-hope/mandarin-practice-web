@@ -326,6 +326,7 @@ function markActivityCompleted(dayNumber, activityIndex) {
 
 function getActivityTypeIcon(type) {
     const icons = {
+        intro: '📖',
         matching: '🔗',
         tones: '🎵',
         listening: '👂',
@@ -410,9 +411,13 @@ function startDailyActivity(dayIndex, activityIndex, isLocked) {
     document.getElementById('listeningView').classList.add('hidden');
     document.getElementById('tonesView').classList.add('hidden');
     document.getElementById('orderingView').classList.add('hidden');
+    document.getElementById('introView').classList.add('hidden');
 
     // Show the appropriate view
-    if (activity.type === 'matching') {
+    if (activity.type === 'intro') {
+        document.getElementById('introView').classList.remove('hidden');
+        initIntroLesson();
+    } else if (activity.type === 'matching') {
         document.getElementById('matchingView').classList.remove('hidden');
         initMatchingLesson();
     } else if (activity.type === 'cloze') {
@@ -1099,6 +1104,7 @@ function showMenu() {
     document.getElementById('listeningView').classList.add('hidden');
     document.getElementById('tonesView').classList.add('hidden');
     document.getElementById('orderingView').classList.add('hidden');
+    document.getElementById('introView').classList.add('hidden');
 
     // Stop any ongoing recording
     if (isRecording) {
@@ -1127,6 +1133,9 @@ function showMenu() {
     orderingSentenceIndex = 0;
     orderingCorrectCount = 0;
     orderingSelectedWords = [];
+
+    // Reset intro state
+    introWordIndex = 0;
 
     // Reset daily activity state
     currentDay = null;
@@ -1397,8 +1406,11 @@ function showMatchingComplete() {
             <h3>${isNewBest ? 'New Best Time!' : 'Great job!'}</h3>
             <p>You matched all ${matchingPairs.length} pairs in <strong>${timeDisplay}</strong></p>
             <p class="best-time">Best time: ${bestTimeDisplay}</p>
-            <button class="primary-button" onclick="restartMatching()">Practice Again</button>
-            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            <div class="complete-actions">
+                ${getNextActivityButton()}
+                <button class="primary-button" onclick="restartMatching()">Practice Again</button>
+                <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            </div>
         </div>
     `;
 }
@@ -1642,8 +1654,11 @@ function showClozeComplete() {
             <p>You got <strong>${clozeCorrectCount}/${total}</strong> sentences correct</p>
             <p>Score: <strong>${score}%</strong></p>
             <p class="best-time">Time: ${timeDisplay}</p>
-            <button class="primary-button" onclick="restartCloze()">Practice Again</button>
-            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            <div class="complete-actions">
+                ${getNextActivityButton()}
+                <button class="primary-button" onclick="restartCloze()">Practice Again</button>
+                <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            </div>
         </div>
     `;
 
@@ -1857,8 +1872,11 @@ function showListeningComplete() {
             <p>You got <strong>${listeningCorrectCount}/${total}</strong> questions correct</p>
             <p>Score: <strong>${score}%</strong></p>
             <p class="best-time">Time: ${timeDisplay}</p>
-            <button class="primary-button" onclick="restartListening()">Practice Again</button>
-            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            <div class="complete-actions">
+                ${getNextActivityButton()}
+                <button class="primary-button" onclick="restartListening()">Practice Again</button>
+                <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            </div>
         </div>
     `;
 
@@ -2048,8 +2066,11 @@ function showTonesComplete() {
             <p>You got <strong>${tonesCorrectCount}/${total}</strong> tones correct</p>
             <p>Score: <strong>${score}%</strong></p>
             <p class="best-time">Time: ${timeDisplay}</p>
-            <button class="primary-button" onclick="restartTones()">Practice Again</button>
-            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            <div class="complete-actions">
+                ${getNextActivityButton()}
+                <button class="primary-button" onclick="restartTones()">Practice Again</button>
+                <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            </div>
         </div>
     `;
 
@@ -2276,8 +2297,11 @@ function showOrderingComplete() {
             <p>You got <strong>${orderingCorrectCount}/${total}</strong> sentences correct</p>
             <p>Score: <strong>${score}%</strong></p>
             <p class="best-time">Time: ${timeDisplay}</p>
-            <button class="primary-button" onclick="restartOrdering()">Practice Again</button>
-            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            <div class="complete-actions">
+                ${getNextActivityButton()}
+                <button class="primary-button" onclick="restartOrdering()">Practice Again</button>
+                <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            </div>
         </div>
     `;
 
@@ -2288,6 +2312,238 @@ function showOrderingComplete() {
 
 function restartOrdering() {
     initOrderingLesson();
+}
+
+// ============================================
+// Word Introduction Lesson Logic
+// ============================================
+
+let introWordIndex = 0;
+
+function initIntroLesson() {
+    // Reset state
+    introWordIndex = 0;
+
+    // Update lesson title with pinyin
+    const titlePinyin = currentLesson.titlePinyin ? ` <span class="title-pinyin">(${currentLesson.titlePinyin})</span>` : '';
+    document.getElementById('lessonTitle').innerHTML =
+        `${currentLesson.icon} ${currentLesson.titleChinese}${titlePinyin}`;
+
+    renderIntroWord();
+    updateIntroProgress();
+}
+
+function renderIntroWord() {
+    const container = document.getElementById('introContainer');
+    const vocab = currentLesson.vocabulary || currentLesson.words || [];
+    const word = vocab[introWordIndex];
+
+    if (!word) {
+        showIntroComplete();
+        return;
+    }
+
+    // Build sentence HTML with highlighted word
+    let sentenceHtml = '';
+    let sentencePinyin = '';
+    let sentenceEnglish = '';
+
+    if (word.sentence) {
+        // Highlight the word in the sentence
+        sentenceHtml = word.sentence.replace(
+            word.word,
+            `<span class="highlight">${word.word}</span>`
+        );
+        sentencePinyin = word.sentencePinyin || '';
+        sentenceEnglish = word.sentenceEnglish || '';
+    }
+
+    container.innerHTML = `
+        <div class="intro-card">
+            <div class="intro-word">${word.word}</div>
+            <div class="intro-pinyin">${word.pinyin}</div>
+            <div class="intro-english">${word.english}</div>
+            <button class="intro-listen-btn" onclick="speakIntroWord()">
+                🔊 Listen to Word
+            </button>
+
+            ${word.sentence ? `
+                <div class="intro-sentence-card">
+                    <div class="intro-sentence-label">Example Sentence</div>
+                    <div class="intro-sentence-chinese">${sentenceHtml}</div>
+                    <div class="intro-sentence-pinyin">${sentencePinyin}</div>
+                    <div class="intro-sentence-english">${sentenceEnglish}</div>
+                    <button class="intro-listen-sentence" onclick="speakIntroSentence()">
+                        🔊 Listen to Sentence
+                    </button>
+                </div>
+            ` : ''}
+        </div>
+
+        <div class="intro-nav">
+            <button class="intro-next-btn" onclick="nextIntroWord()">
+                ${introWordIndex < vocab.length - 1 ? 'Next Word →' : 'Complete ✓'}
+            </button>
+        </div>
+    `;
+
+    // Auto-play the word
+    setTimeout(() => speakIntroWord(), 300);
+}
+
+function speakIntroWord() {
+    const vocab = currentLesson.vocabulary || currentLesson.words || [];
+    const word = vocab[introWordIndex];
+
+    if ('speechSynthesis' in window && word) {
+        speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(word.word);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.7;
+
+        const voices = speechSynthesis.getVoices();
+        const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
+        if (chineseVoice) {
+            utterance.voice = chineseVoice;
+        }
+
+        speechSynthesis.speak(utterance);
+    }
+}
+
+function speakIntroSentence() {
+    const vocab = currentLesson.vocabulary || currentLesson.words || [];
+    const word = vocab[introWordIndex];
+
+    if ('speechSynthesis' in window && word && word.sentence) {
+        speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(word.sentence);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.8;
+
+        const voices = speechSynthesis.getVoices();
+        const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
+        if (chineseVoice) {
+            utterance.voice = chineseVoice;
+        }
+
+        speechSynthesis.speak(utterance);
+    }
+}
+
+function nextIntroWord() {
+    const vocab = currentLesson.vocabulary || currentLesson.words || [];
+    introWordIndex++;
+
+    if (introWordIndex >= vocab.length) {
+        showIntroComplete();
+    } else {
+        renderIntroWord();
+        updateIntroProgress();
+    }
+}
+
+function updateIntroProgress() {
+    const vocab = currentLesson.vocabulary || currentLesson.words || [];
+    const total = vocab.length;
+    const completed = introWordIndex;
+    const percent = (completed / total) * 100;
+
+    document.getElementById('introProgressFill').style.width = `${percent}%`;
+    document.getElementById('introProgressText').textContent = `${completed}/${total} words`;
+}
+
+function showIntroComplete() {
+    const container = document.getElementById('introContainer');
+    const vocab = currentLesson.vocabulary || currentLesson.words || [];
+
+    // Mark daily activity as completed
+    if (currentDay) {
+        markActivityCompleted(currentDay.day, currentActivityIndex);
+    }
+
+    const nextActivity = getNextActivity();
+
+    container.innerHTML = `
+        <div class="matching-complete">
+            <div class="complete-icon">📚</div>
+            <h3>Words Learned!</h3>
+            <p>You've reviewed <strong>${vocab.length}</strong> new words</p>
+            <p>Now practice using them in the next activities!</p>
+            <div class="complete-actions">
+                ${nextActivity ? `
+                    <button class="next-activity-btn" onclick="goToNextActivity()">
+                        Continue: ${nextActivity.title} →
+                    </button>
+                ` : ''}
+                <button class="primary-button" onclick="restartIntro()">Review Again</button>
+                <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+            </div>
+        </div>
+    `;
+
+    // Update progress to 100%
+    document.getElementById('introProgressFill').style.width = '100%';
+    document.getElementById('introProgressText').textContent = `${vocab.length}/${vocab.length} words`;
+}
+
+function restartIntro() {
+    initIntroLesson();
+}
+
+// ============================================
+// Next Activity Navigation
+// ============================================
+
+function getNextActivity() {
+    if (!currentDay) return null;
+
+    const nextIndex = currentActivityIndex + 1;
+    if (nextIndex < currentDay.activities.length) {
+        return {
+            dayIndex: window.DAILY_CURRICULUM.indexOf(currentDay),
+            activityIndex: nextIndex,
+            title: currentDay.activities[nextIndex].title,
+            type: currentDay.activities[nextIndex].type
+        };
+    }
+
+    // Check if there's a next day
+    const currentDayIndex = window.DAILY_CURRICULUM.indexOf(currentDay);
+    if (currentDayIndex < window.DAILY_CURRICULUM.length - 1) {
+        const nextDay = window.DAILY_CURRICULUM[currentDayIndex + 1];
+        return {
+            dayIndex: currentDayIndex + 1,
+            activityIndex: 0,
+            title: `Day ${nextDay.day}: ${nextDay.activities[0].title}`,
+            type: nextDay.activities[0].type,
+            isNextDay: true
+        };
+    }
+
+    return null;
+}
+
+function goToNextActivity() {
+    const next = getNextActivity();
+    if (next) {
+        startDailyActivity(next.dayIndex, next.activityIndex, false);
+    } else {
+        showMenu();
+    }
+}
+
+function getNextActivityButton() {
+    const next = getNextActivity();
+    if (!next) return '';
+
+    return `
+        <button class="next-activity-btn" onclick="goToNextActivity()">
+            ${next.isNextDay ? 'Start ' : 'Continue: '}${next.title} →
+        </button>
+    `;
 }
 
 // ============================================
@@ -2330,3 +2586,10 @@ window.showProfileSetup = showProfileSetup;
 window.toggleDayCard = toggleDayCard;
 window.startDailyActivity = startDailyActivity;
 window.startTodaysPractice = startTodaysPractice;
+
+// Intro lesson exports
+window.speakIntroWord = speakIntroWord;
+window.speakIntroSentence = speakIntroSentence;
+window.nextIntroWord = nextIntroWord;
+window.restartIntro = restartIntro;
+window.goToNextActivity = goToNextActivity;

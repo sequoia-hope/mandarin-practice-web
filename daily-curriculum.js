@@ -4,11 +4,14 @@
 /**
  * Daily curriculum structure:
  * Each day has a theme and contains multiple activities that build on each other:
- * 1. vocabulary - Introduce new words (matching game)
- * 2. tones - Practice tones for key words
- * 3. listening - Listen and identify phrases
- * 4. cloze - Fill in blanks to reinforce vocabulary
- * 5. speaking - Speak full phrases
+ * 1. intro - Introduce new words with audio and example sentences
+ * 2. matching - Practice character-pinyin recognition
+ * 3. tones - Practice tone identification
+ * 4. listening - Listen and identify phrases
+ * 5. cloze - Fill in blanks to reinforce vocabulary
+ * 6. speaking - Speak full phrases
+ *
+ * Spaced repetition: Later days include review words from previous days
  */
 
 const DAILY_CURRICULUM = [
@@ -24,20 +27,31 @@ const DAILY_CURRICULUM = [
         theme: "greetings",
         description: "Learn basic greetings and introductions",
 
-        // Core vocabulary for this day
+        // Core vocabulary for this day (with example sentences)
         vocabulary: [
-            { word: "你好", pinyin: "nǐ hǎo", english: "hello", tone: 3 },
-            { word: "你", pinyin: "nǐ", english: "you", tone: 3 },
-            { word: "好", pinyin: "hǎo", english: "good", tone: 3 },
-            { word: "我", pinyin: "wǒ", english: "I/me", tone: 3 },
-            { word: "谢谢", pinyin: "xièxiè", english: "thank you", tone: 4 },
-            { word: "再见", pinyin: "zàijiàn", english: "goodbye", tone: 4 },
+            { word: "你好", pinyin: "nǐ hǎo", english: "hello", tone: 3,
+              sentence: "你好，很高兴认识你", sentencePinyin: "nǐ hǎo, hěn gāoxìng rènshí nǐ", sentenceEnglish: "Hello, nice to meet you" },
+            { word: "你", pinyin: "nǐ", english: "you", tone: 3,
+              sentence: "你是学生吗", sentencePinyin: "nǐ shì xuéshēng ma", sentenceEnglish: "Are you a student?" },
+            { word: "好", pinyin: "hǎo", english: "good", tone: 3,
+              sentence: "今天天气很好", sentencePinyin: "jīntiān tiānqì hěn hǎo", sentenceEnglish: "The weather is nice today" },
+            { word: "我", pinyin: "wǒ", english: "I/me", tone: 3,
+              sentence: "我是中国人", sentencePinyin: "wǒ shì zhōngguó rén", sentenceEnglish: "I am Chinese" },
+            { word: "谢谢", pinyin: "xièxiè", english: "thank you", tone: 4,
+              sentence: "谢谢你的帮助", sentencePinyin: "xièxiè nǐ de bāngzhù", sentenceEnglish: "Thank you for your help" },
+            { word: "再见", pinyin: "zàijiàn", english: "goodbye", tone: 4,
+              sentence: "明天见，再见", sentencePinyin: "míngtiān jiàn, zàijiàn", sentenceEnglish: "See you tomorrow, goodbye" },
         ],
 
         activities: [
             {
+                type: "intro",
+                title: "Learn New Words",
+                description: "Listen and learn today's vocabulary"
+            },
+            {
                 type: "matching",
-                title: "Learn the Words",
+                title: "Match Words",
                 description: "Match characters to pinyin",
                 phrases: [
                     { characters: "你好", pinyin: "nǐ hǎo", english: "hello" },
@@ -96,18 +110,32 @@ const DAILY_CURRICULUM = [
         description: "Learn to introduce yourself and ask names",
 
         vocabulary: [
-            { word: "叫", pinyin: "jiào", english: "to be called", tone: 4 },
-            { word: "什么", pinyin: "shénme", english: "what", tone: 2 },
-            { word: "名字", pinyin: "míngzì", english: "name", tone: 2 },
-            { word: "是", pinyin: "shì", english: "to be", tone: 4 },
-            { word: "很", pinyin: "hěn", english: "very", tone: 3 },
-            { word: "高兴", pinyin: "gāoxìng", english: "happy", tone: 1 },
+            { word: "叫", pinyin: "jiào", english: "to be called", tone: 4,
+              sentence: "我叫小明", sentencePinyin: "wǒ jiào xiǎo míng", sentenceEnglish: "My name is Xiaoming" },
+            { word: "什么", pinyin: "shénme", english: "what", tone: 2,
+              sentence: "这是什么", sentencePinyin: "zhè shì shénme", sentenceEnglish: "What is this?" },
+            { word: "名字", pinyin: "míngzì", english: "name", tone: 2,
+              sentence: "你的名字很好听", sentencePinyin: "nǐ de míngzì hěn hǎotīng", sentenceEnglish: "Your name sounds nice" },
+            { word: "是", pinyin: "shì", english: "to be", tone: 4,
+              sentence: "我是学生", sentencePinyin: "wǒ shì xuéshēng", sentenceEnglish: "I am a student" },
+            { word: "很", pinyin: "hěn", english: "very", tone: 3,
+              sentence: "今天很热", sentencePinyin: "jīntiān hěn rè", sentenceEnglish: "Today is very hot" },
+            { word: "高兴", pinyin: "gāoxìng", english: "happy", tone: 1,
+              sentence: "我很高兴", sentencePinyin: "wǒ hěn gāoxìng", sentenceEnglish: "I am very happy" },
         ],
+
+        // Review words from Day 1
+        reviewWords: ["你好", "我", "你"],
 
         activities: [
             {
+                type: "intro",
+                title: "Learn New Words",
+                description: "Listen and learn today's vocabulary"
+            },
+            {
                 type: "matching",
-                title: "Learn the Words",
+                title: "Match Words",
                 description: "Match characters to pinyin",
                 phrases: [
                     { characters: "叫", pinyin: "jiào", english: "to be called" },
@@ -116,6 +144,9 @@ const DAILY_CURRICULUM = [
                     { characters: "是", pinyin: "shì", english: "to be" },
                     { characters: "很", pinyin: "hěn", english: "very" },
                     { characters: "高兴", pinyin: "gāoxìng", english: "happy" },
+                    // Review from Day 1
+                    { characters: "你好", pinyin: "nǐ hǎo", english: "hello" },
+                    { characters: "我", pinyin: "wǒ", english: "I/me" },
                 ]
             },
             {
@@ -139,8 +170,8 @@ const DAILY_CURRICULUM = [
                         template: "我{0}{{NAME}}",
                         answers: ["叫"],
                         distractors: ["是", "很"],
-                        pinyin: "wǒ jiào {{NAME}}",
-                        english: "My name is {{NAME}}"
+                        pinyin: "wǒ jiào {{NAME_PINYIN}}",
+                        english: "My name is {{NAME_ENGLISH}}"
                     },
                     {
                         template: "你叫{0}名字",
@@ -155,7 +186,6 @@ const DAILY_CURRICULUM = [
                 type: "speaking",
                 title: "Speak",
                 description: "Practice speaking",
-                // Note: {{NAME}} will be replaced with user's chosen Chinese name
                 phrases: [
                     { characters: "我叫{{NAME}}", pinyin: "wǒ jiào {{NAME_PINYIN}}", english: "My name is {{NAME_ENGLISH}}" },
                     { characters: "你叫什么名字", pinyin: "nǐ jiào shénme míngzì", english: "What is your name?" },
@@ -178,22 +208,39 @@ const DAILY_CURRICULUM = [
         description: "Learn to count from 1 to 10",
 
         vocabulary: [
-            { word: "一", pinyin: "yī", english: "one", tone: 1 },
-            { word: "二", pinyin: "èr", english: "two", tone: 4 },
-            { word: "三", pinyin: "sān", english: "three", tone: 1 },
-            { word: "四", pinyin: "sì", english: "four", tone: 4 },
-            { word: "五", pinyin: "wǔ", english: "five", tone: 3 },
-            { word: "六", pinyin: "liù", english: "six", tone: 4 },
-            { word: "七", pinyin: "qī", english: "seven", tone: 1 },
-            { word: "八", pinyin: "bā", english: "eight", tone: 1 },
-            { word: "九", pinyin: "jiǔ", english: "nine", tone: 3 },
-            { word: "十", pinyin: "shí", english: "ten", tone: 2 },
+            { word: "一", pinyin: "yī", english: "one", tone: 1,
+              sentence: "我有一本书", sentencePinyin: "wǒ yǒu yī běn shū", sentenceEnglish: "I have one book" },
+            { word: "二", pinyin: "èr", english: "two", tone: 4,
+              sentence: "两个人", sentencePinyin: "liǎng gè rén", sentenceEnglish: "Two people" },
+            { word: "三", pinyin: "sān", english: "three", tone: 1,
+              sentence: "三个苹果", sentencePinyin: "sān gè píngguǒ", sentenceEnglish: "Three apples" },
+            { word: "四", pinyin: "sì", english: "four", tone: 4,
+              sentence: "四点钟", sentencePinyin: "sì diǎn zhōng", sentenceEnglish: "Four o'clock" },
+            { word: "五", pinyin: "wǔ", english: "five", tone: 3,
+              sentence: "五个学生", sentencePinyin: "wǔ gè xuéshēng", sentenceEnglish: "Five students" },
+            { word: "六", pinyin: "liù", english: "six", tone: 4,
+              sentence: "六月", sentencePinyin: "liù yuè", sentenceEnglish: "June (6th month)" },
+            { word: "七", pinyin: "qī", english: "seven", tone: 1,
+              sentence: "七天", sentencePinyin: "qī tiān", sentenceEnglish: "Seven days" },
+            { word: "八", pinyin: "bā", english: "eight", tone: 1,
+              sentence: "八点", sentencePinyin: "bā diǎn", sentenceEnglish: "Eight o'clock" },
+            { word: "九", pinyin: "jiǔ", english: "nine", tone: 3,
+              sentence: "九月", sentencePinyin: "jiǔ yuè", sentenceEnglish: "September (9th month)" },
+            { word: "十", pinyin: "shí", english: "ten", tone: 2,
+              sentence: "十块钱", sentencePinyin: "shí kuài qián", sentenceEnglish: "Ten yuan" },
         ],
+
+        reviewWords: ["你好", "谢谢", "叫"],
 
         activities: [
             {
+                type: "intro",
+                title: "Learn Numbers",
+                description: "Listen and learn 1-10"
+            },
+            {
                 type: "matching",
-                title: "Learn the Numbers",
+                title: "Match Numbers",
                 description: "Match numbers to pinyin",
                 phrases: [
                     { characters: "一", pinyin: "yī", english: "one" },
@@ -258,19 +305,33 @@ const DAILY_CURRICULUM = [
         description: "Learn words for family members",
 
         vocabulary: [
-            { word: "家", pinyin: "jiā", english: "home/family", tone: 1 },
-            { word: "爸爸", pinyin: "bàba", english: "father", tone: 4 },
-            { word: "妈妈", pinyin: "māma", english: "mother", tone: 1 },
-            { word: "哥哥", pinyin: "gēge", english: "older brother", tone: 1 },
-            { word: "姐姐", pinyin: "jiějie", english: "older sister", tone: 3 },
-            { word: "弟弟", pinyin: "dìdi", english: "younger brother", tone: 4 },
-            { word: "妹妹", pinyin: "mèimei", english: "younger sister", tone: 4 },
+            { word: "家", pinyin: "jiā", english: "home/family", tone: 1,
+              sentence: "我的家很大", sentencePinyin: "wǒ de jiā hěn dà", sentenceEnglish: "My home is big" },
+            { word: "爸爸", pinyin: "bàba", english: "father", tone: 4,
+              sentence: "我爸爸很高", sentencePinyin: "wǒ bàba hěn gāo", sentenceEnglish: "My father is tall" },
+            { word: "妈妈", pinyin: "māma", english: "mother", tone: 1,
+              sentence: "妈妈做饭很好吃", sentencePinyin: "māma zuòfàn hěn hǎochī", sentenceEnglish: "Mom's cooking is delicious" },
+            { word: "哥哥", pinyin: "gēge", english: "older brother", tone: 1,
+              sentence: "我哥哥二十岁", sentencePinyin: "wǒ gēge èrshí suì", sentenceEnglish: "My older brother is 20 years old" },
+            { word: "姐姐", pinyin: "jiějie", english: "older sister", tone: 3,
+              sentence: "姐姐是老师", sentencePinyin: "jiějie shì lǎoshī", sentenceEnglish: "Older sister is a teacher" },
+            { word: "弟弟", pinyin: "dìdi", english: "younger brother", tone: 4,
+              sentence: "弟弟很可爱", sentencePinyin: "dìdi hěn kě'ài", sentenceEnglish: "Younger brother is cute" },
+            { word: "妹妹", pinyin: "mèimei", english: "younger sister", tone: 4,
+              sentence: "妹妹喜欢唱歌", sentencePinyin: "mèimei xǐhuān chànggē", sentenceEnglish: "Younger sister likes to sing" },
         ],
+
+        reviewWords: ["我", "很", "是", "一", "二"],
 
         activities: [
             {
-                type: "matching",
+                type: "intro",
                 title: "Learn Family Words",
+                description: "Listen and learn family vocabulary"
+            },
+            {
+                type: "matching",
+                title: "Match Family Words",
                 description: "Match family members to pinyin",
                 phrases: [
                     { characters: "家", pinyin: "jiā", english: "home/family" },
@@ -330,19 +391,33 @@ const DAILY_CURRICULUM = [
         description: "Learn words for food and drink",
 
         vocabulary: [
-            { word: "吃", pinyin: "chī", english: "to eat", tone: 1 },
-            { word: "喝", pinyin: "hē", english: "to drink", tone: 1 },
-            { word: "水", pinyin: "shuǐ", english: "water", tone: 3 },
-            { word: "茶", pinyin: "chá", english: "tea", tone: 2 },
-            { word: "饭", pinyin: "fàn", english: "rice/meal", tone: 4 },
-            { word: "菜", pinyin: "cài", english: "vegetables/dish", tone: 4 },
-            { word: "好吃", pinyin: "hǎochī", english: "delicious", tone: 3 },
+            { word: "吃", pinyin: "chī", english: "to eat", tone: 1,
+              sentence: "我想吃饭", sentencePinyin: "wǒ xiǎng chī fàn", sentenceEnglish: "I want to eat" },
+            { word: "喝", pinyin: "hē", english: "to drink", tone: 1,
+              sentence: "我要喝水", sentencePinyin: "wǒ yào hē shuǐ", sentenceEnglish: "I want to drink water" },
+            { word: "水", pinyin: "shuǐ", english: "water", tone: 3,
+              sentence: "水很冷", sentencePinyin: "shuǐ hěn lěng", sentenceEnglish: "The water is cold" },
+            { word: "茶", pinyin: "chá", english: "tea", tone: 2,
+              sentence: "中国茶很好喝", sentencePinyin: "zhōngguó chá hěn hǎohē", sentenceEnglish: "Chinese tea is delicious" },
+            { word: "饭", pinyin: "fàn", english: "rice/meal", tone: 4,
+              sentence: "吃饭了", sentencePinyin: "chī fàn le", sentenceEnglish: "Time to eat!" },
+            { word: "菜", pinyin: "cài", english: "vegetables/dish", tone: 4,
+              sentence: "这个菜很好吃", sentencePinyin: "zhège cài hěn hǎochī", sentenceEnglish: "This dish is delicious" },
+            { word: "好吃", pinyin: "hǎochī", english: "delicious", tone: 3,
+              sentence: "妈妈做的饭很好吃", sentencePinyin: "māma zuò de fàn hěn hǎochī", sentenceEnglish: "Mom's cooking is delicious" },
         ],
+
+        reviewWords: ["很", "我", "要", "是", "好"],
 
         activities: [
             {
-                type: "matching",
+                type: "intro",
                 title: "Learn Food Words",
+                description: "Listen and learn food vocabulary"
+            },
+            {
+                type: "matching",
+                title: "Match Food Words",
                 description: "Match food to pinyin",
                 phrases: [
                     { characters: "吃", pinyin: "chī", english: "to eat" },
@@ -413,18 +488,31 @@ const DAILY_CURRICULUM = [
         description: "Learn to ask where things are",
 
         vocabulary: [
-            { word: "在", pinyin: "zài", english: "at/in", tone: 4 },
-            { word: "哪里", pinyin: "nǎlǐ", english: "where", tone: 3 },
-            { word: "这里", pinyin: "zhèlǐ", english: "here", tone: 4 },
-            { word: "那里", pinyin: "nàlǐ", english: "there", tone: 4 },
-            { word: "去", pinyin: "qù", english: "to go", tone: 4 },
-            { word: "来", pinyin: "lái", english: "to come", tone: 2 },
+            { word: "在", pinyin: "zài", english: "at/in", tone: 4,
+              sentence: "我在家", sentencePinyin: "wǒ zài jiā", sentenceEnglish: "I am at home" },
+            { word: "哪里", pinyin: "nǎlǐ", english: "where", tone: 3,
+              sentence: "你在哪里", sentencePinyin: "nǐ zài nǎlǐ", sentenceEnglish: "Where are you?" },
+            { word: "这里", pinyin: "zhèlǐ", english: "here", tone: 4,
+              sentence: "我在这里", sentencePinyin: "wǒ zài zhèlǐ", sentenceEnglish: "I am here" },
+            { word: "那里", pinyin: "nàlǐ", english: "there", tone: 4,
+              sentence: "他在那里", sentencePinyin: "tā zài nàlǐ", sentenceEnglish: "He is there" },
+            { word: "去", pinyin: "qù", english: "to go", tone: 4,
+              sentence: "我去学校", sentencePinyin: "wǒ qù xuéxiào", sentenceEnglish: "I go to school" },
+            { word: "来", pinyin: "lái", english: "to come", tone: 2,
+              sentence: "请来这里", sentencePinyin: "qǐng lái zhèlǐ", sentenceEnglish: "Please come here" },
         ],
+
+        reviewWords: ["你", "我", "是", "家", "什么"],
 
         activities: [
             {
-                type: "matching",
+                type: "intro",
                 title: "Learn Location Words",
+                description: "Listen and learn location vocabulary"
+            },
+            {
+                type: "matching",
+                title: "Match Location Words",
                 description: "Match words to pinyin",
                 phrases: [
                     { characters: "在", pinyin: "zài", english: "at/in" },
@@ -491,7 +579,7 @@ const DAILY_CURRICULUM = [
                 description: "Review all phrases",
                 questions: [
                     { audio: "你好", pinyin: "nǐ hǎo", correct: "你好", choices: ["你好", "再见", "谢谢", "你好吗"] },
-                    { audio: "我叫什么", pinyin: "wǒ jiào shénme", correct: "我叫什么", choices: ["你叫什么", "我叫什么", "他叫什么", "什么名字"] },
+                    { audio: "我叫小明", pinyin: "wǒ jiào xiǎo míng", correct: "我叫小明", choices: ["你叫什么", "我叫小明", "他叫什么", "什么名字"] },
                     { audio: "三四五", pinyin: "sān sì wǔ", correct: "三四五", choices: ["一二三", "三四五", "六七八", "四五六"] },
                     { audio: "爸爸妈妈", pinyin: "bàba māma", correct: "爸爸妈妈", choices: ["爸爸妈妈", "哥哥姐姐", "弟弟妹妹", "爷爷奶奶"] },
                     { audio: "我要喝水", pinyin: "wǒ yào hē shuǐ", correct: "我要喝水", choices: ["我要喝水", "我要吃饭", "我要喝茶", "你要喝水"] },

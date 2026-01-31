@@ -586,6 +586,146 @@
         .type-icon-cloze { background: #dcfce7; }
         .type-icon-speaking { background: #fee2e2; }
         .type-icon-ordering { background: #e0e7ff; }
+        .type-icon-intro { background: #fef9c3; }
+
+        /* Word Introduction Lesson Styles */
+        .intro-view {
+            padding: 16px 0;
+        }
+
+        .intro-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .intro-word {
+            font-size: 56px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .intro-pinyin {
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .intro-english {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .intro-listen-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .intro-sentence-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .intro-sentence-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .intro-sentence-chinese {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        .intro-sentence-chinese .highlight {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .intro-sentence-pinyin {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .intro-sentence-english {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .intro-listen-sentence {
+            background: none;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 12px;
+            color: var(--text);
+        }
+
+        .intro-nav {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .intro-next-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .intro-next-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        /* Complete Screen Action Buttons */
+        .complete-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .next-activity-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .next-activity-btn:hover {
+            filter: brightness(1.1);
+        }
 
         /* Lesson View */
         .lesson-view {
@@ -1901,6 +2041,22 @@
 
                 <div id="orderingContainer">
                     <!-- Sentence ordering content rendered here -->
+                </div>
+            </div>
+
+            <!-- Word Introduction View -->
+            <div id="introView" class="intro-view hidden">
+                <div class="matching-progress">
+                    <div class="progress-bar">
+                        <div id="introProgressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="introProgressText">0/0 words</span>
+                    </div>
+                </div>
+
+                <div id="introContainer">
+                    <!-- Word introduction content rendered here -->
                 </div>
             </div>
         </div>
