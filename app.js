@@ -1280,14 +1280,11 @@ function renderListeningQuestion() {
     const container = document.getElementById('listeningContainer');
     const question = currentLesson.questions[listeningQuestionIndex];
 
-    // Create choices (correct answer + distractors, shuffled)
-    const choices = [question.answer, ...question.distractors].map(text => {
-        // Try to find pinyin for this choice
-        const vocab = currentLesson.vocabulary || [];
-        const vocabItem = vocab.find(v => v.word === text);
+    // Create choices from the question's choices array, shuffled
+    const choices = question.choices.map(text => {
         return {
             text,
-            pinyin: vocabItem ? vocabItem.pinyin : ''
+            pinyin: '' // Pinyin shown after answering
         };
     });
     shuffleArray(choices);
@@ -1356,13 +1353,13 @@ function selectListeningChoice(text, buttonIndex) {
     buttons.forEach(btn => btn.classList.add('disabled'));
 
     // Check answer
-    const isCorrect = text === question.answer;
+    const isCorrect = text === question.correct;
     const selectedButton = document.querySelector(`.listening-choice[data-index="${buttonIndex}"]`);
 
     if (isCorrect) {
         listeningCorrectCount++;
         selectedButton.classList.add('correct');
-        feedback.textContent = '✓ Correct!';
+        feedback.innerHTML = `✓ Correct! <span class="feedback-pinyin">${question.pinyin}</span>`;
         feedback.className = 'listening-feedback visible correct';
 
         // Record progress
@@ -1371,11 +1368,11 @@ function selectListeningChoice(text, buttonIndex) {
         selectedButton.classList.add('incorrect');
         // Highlight correct answer
         buttons.forEach(btn => {
-            if (btn.dataset.text === question.answer) {
+            if (btn.dataset.text === question.correct) {
                 btn.classList.add('correct');
             }
         });
-        feedback.innerHTML = `✗ The answer was: <strong>${question.answer}</strong>`;
+        feedback.innerHTML = `✗ The answer was: <strong>${question.correct}</strong> <span class="feedback-pinyin">${question.pinyin}</span>`;
         feedback.className = 'listening-feedback visible incorrect';
 
         // Record attempt
