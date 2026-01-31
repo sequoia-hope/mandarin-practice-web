@@ -95,6 +95,42 @@ function renderLessonList() {
             } else {
                 progressDisplay = `${total} fill 📝`;
             }
+        } else if (lessonType === 'listening') {
+            const completed = lessonProgress.completedPhrases.length;
+            const total = lesson.questions ? lesson.questions.length : 0;
+            if (completed === total && total > 0) {
+                progressDisplay = '✓';
+                progressClass = 'completed';
+            } else if (completed > 0) {
+                progressDisplay = `${completed}/${total} 👂`;
+                progressClass = 'in-progress';
+            } else {
+                progressDisplay = `${total} listen 👂`;
+            }
+        } else if (lessonType === 'tones') {
+            const completed = lessonProgress.completedPhrases.length;
+            const total = lesson.words ? lesson.words.length : 0;
+            if (completed === total && total > 0) {
+                progressDisplay = '✓';
+                progressClass = 'completed';
+            } else if (completed > 0) {
+                progressDisplay = `${completed}/${total} 🎵`;
+                progressClass = 'in-progress';
+            } else {
+                progressDisplay = `${total} tones 🎵`;
+            }
+        } else if (lessonType === 'ordering') {
+            const completed = lessonProgress.completedPhrases.length;
+            const total = lesson.sentences ? lesson.sentences.length : 0;
+            if (completed === total && total > 0) {
+                progressDisplay = '✓';
+                progressClass = 'completed';
+            } else if (completed > 0) {
+                progressDisplay = `${completed}/${total} 🔀`;
+                progressClass = 'in-progress';
+            } else {
+                progressDisplay = `${total} order 🔀`;
+            }
         } else {
             const completed = lessonProgress.completedPhrases.length;
             const total = lesson.phrases.length;
@@ -609,6 +645,9 @@ function startLesson(index) {
     document.getElementById('speakingView').classList.add('hidden');
     document.getElementById('matchingView').classList.add('hidden');
     document.getElementById('clozeView').classList.add('hidden');
+    document.getElementById('listeningView').classList.add('hidden');
+    document.getElementById('tonesView').classList.add('hidden');
+    document.getElementById('orderingView').classList.add('hidden');
 
     // Check lesson type and show appropriate view
     const lessonType = currentLesson.type || 'speaking';
@@ -618,6 +657,15 @@ function startLesson(index) {
     } else if (lessonType === 'cloze') {
         document.getElementById('clozeView').classList.remove('hidden');
         initClozeLesson();
+    } else if (lessonType === 'listening') {
+        document.getElementById('listeningView').classList.remove('hidden');
+        initListeningLesson();
+    } else if (lessonType === 'tones') {
+        document.getElementById('tonesView').classList.remove('hidden');
+        initTonesLesson();
+    } else if (lessonType === 'ordering') {
+        document.getElementById('orderingView').classList.remove('hidden');
+        initOrderingLesson();
     } else {
         document.getElementById('speakingView').classList.remove('hidden');
         updateLessonUI();
@@ -633,6 +681,9 @@ function showMenu() {
     document.getElementById('speakingView').classList.remove('hidden');
     document.getElementById('matchingView').classList.add('hidden');
     document.getElementById('clozeView').classList.add('hidden');
+    document.getElementById('listeningView').classList.add('hidden');
+    document.getElementById('tonesView').classList.add('hidden');
+    document.getElementById('orderingView').classList.add('hidden');
 
     // Stop any ongoing recording
     if (isRecording) {
@@ -648,6 +699,19 @@ function showMenu() {
     clozeSentenceIndex = 0;
     clozeFilledBlanks = [];
     clozeCorrectCount = 0;
+
+    // Reset listening state
+    listeningQuestionIndex = 0;
+    listeningCorrectCount = 0;
+
+    // Reset tones state
+    tonesWordIndex = 0;
+    tonesCorrectCount = 0;
+
+    // Reset ordering state
+    orderingSentenceIndex = 0;
+    orderingCorrectCount = 0;
+    orderingSelectedWords = [];
 
     // Refresh lesson list to show updated progress
     renderLessonList();
@@ -1190,6 +1254,601 @@ function speakClozeSentence() {
 }
 
 // ============================================
+// Listening Quiz Lesson Logic
+// ============================================
+
+let listeningQuestionIndex = 0;
+let listeningCorrectCount = 0;
+let listeningStartTime = null;
+
+function initListeningLesson() {
+    // Reset state
+    listeningQuestionIndex = 0;
+    listeningCorrectCount = 0;
+    listeningStartTime = Date.now();
+
+    // Update lesson title with pinyin
+    const titlePinyin = currentLesson.titlePinyin ? ` <span class="title-pinyin">(${currentLesson.titlePinyin})</span>` : '';
+    document.getElementById('lessonTitle').innerHTML =
+        `${currentLesson.icon} ${currentLesson.titleChinese}${titlePinyin}`;
+
+    renderListeningQuestion();
+    updateListeningProgress();
+}
+
+function renderListeningQuestion() {
+    const container = document.getElementById('listeningContainer');
+    const question = currentLesson.questions[listeningQuestionIndex];
+
+    // Create choices (correct answer + distractors, shuffled)
+    const choices = [question.answer, ...question.distractors].map(text => {
+        // Try to find pinyin for this choice
+        const vocab = currentLesson.vocabulary || [];
+        const vocabItem = vocab.find(v => v.word === text);
+        return {
+            text,
+            pinyin: vocabItem ? vocabItem.pinyin : ''
+        };
+    });
+    shuffleArray(choices);
+
+    container.innerHTML = `
+        <div class="listening-card">
+            <div class="listening-instruction">
+                Listen and select what you heard
+            </div>
+            <button class="listen-big-button" onclick="speakListeningAudio()">
+                🔊 Play Audio
+            </button>
+        </div>
+
+        <div class="listening-choices" id="listeningChoices">
+            ${choices.map((c, i) => `
+                <button class="listening-choice" data-text="${escapeHtml(c.text)}" data-index="${i}"
+                        onclick="selectListeningChoice('${escapeHtml(c.text)}', ${i})">
+                    <span class="choice-text">${c.text}</span>
+                    ${c.pinyin ? `<span class="choice-pinyin">${c.pinyin}</span>` : ''}
+                </button>
+            `).join('')}
+        </div>
+
+        <div id="listeningFeedback" class="listening-feedback"></div>
+
+        <div class="listening-next" id="listeningNextContainer" style="display: none;">
+            <button class="primary-button" onclick="nextListeningQuestion()">
+                Next Question →
+            </button>
+        </div>
+    `;
+
+    // Auto-play audio after a short delay
+    setTimeout(() => speakListeningAudio(), 500);
+}
+
+function speakListeningAudio() {
+    const question = currentLesson.questions[listeningQuestionIndex];
+
+    // Speak the audio phrase
+    if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(question.audio);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.8;
+
+        const voices = speechSynthesis.getVoices();
+        const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
+        if (chineseVoice) {
+            utterance.voice = chineseVoice;
+        }
+
+        speechSynthesis.speak(utterance);
+    }
+}
+
+function selectListeningChoice(text, buttonIndex) {
+    const question = currentLesson.questions[listeningQuestionIndex];
+    const feedback = document.getElementById('listeningFeedback');
+    const nextContainer = document.getElementById('listeningNextContainer');
+    const buttons = document.querySelectorAll('.listening-choice');
+
+    // Disable all buttons
+    buttons.forEach(btn => btn.classList.add('disabled'));
+
+    // Check answer
+    const isCorrect = text === question.answer;
+    const selectedButton = document.querySelector(`.listening-choice[data-index="${buttonIndex}"]`);
+
+    if (isCorrect) {
+        listeningCorrectCount++;
+        selectedButton.classList.add('correct');
+        feedback.textContent = '✓ Correct!';
+        feedback.className = 'listening-feedback visible correct';
+
+        // Record progress
+        recordSpeakingAttempt(currentLesson.id, listeningQuestionIndex, 100, true);
+    } else {
+        selectedButton.classList.add('incorrect');
+        // Highlight correct answer
+        buttons.forEach(btn => {
+            if (btn.dataset.text === question.answer) {
+                btn.classList.add('correct');
+            }
+        });
+        feedback.innerHTML = `✗ The answer was: <strong>${question.answer}</strong>`;
+        feedback.className = 'listening-feedback visible incorrect';
+
+        // Record attempt
+        recordSpeakingAttempt(currentLesson.id, listeningQuestionIndex, 0, false);
+    }
+
+    // Show next button
+    nextContainer.style.display = 'flex';
+    updateListeningProgress();
+}
+
+function nextListeningQuestion() {
+    listeningQuestionIndex++;
+
+    if (listeningQuestionIndex >= currentLesson.questions.length) {
+        showListeningComplete();
+    } else {
+        renderListeningQuestion();
+        updateListeningProgress();
+    }
+}
+
+function updateListeningProgress() {
+    const total = currentLesson.questions.length;
+    const completed = listeningQuestionIndex;
+    const percent = (completed / total) * 100;
+
+    document.getElementById('listeningProgressFill').style.width = `${percent}%`;
+    document.getElementById('listeningProgressText').textContent = `${completed}/${total} completed`;
+}
+
+function showListeningComplete() {
+    const container = document.getElementById('listeningContainer');
+    const total = currentLesson.questions.length;
+    const score = Math.round((listeningCorrectCount / total) * 100);
+
+    // Calculate time
+    const timeSeconds = Math.round((Date.now() - listeningStartTime) / 1000);
+    const minutes = Math.floor(timeSeconds / 60);
+    const seconds = timeSeconds % 60;
+    const timeDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+    container.innerHTML = `
+        <div class="matching-complete">
+            <div class="complete-icon">${score >= 80 ? '🏆' : score >= 50 ? '🎉' : '📚'}</div>
+            <h3>${score >= 80 ? 'Excellent!' : score >= 50 ? 'Good job!' : 'Keep practicing!'}</h3>
+            <p>You got <strong>${listeningCorrectCount}/${total}</strong> questions correct</p>
+            <p>Score: <strong>${score}%</strong></p>
+            <p class="best-time">Time: ${timeDisplay}</p>
+            <button class="primary-button" onclick="restartListening()">Practice Again</button>
+            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+        </div>
+    `;
+
+    // Update progress bar to 100%
+    document.getElementById('listeningProgressFill').style.width = '100%';
+    document.getElementById('listeningProgressText').textContent = `${total}/${total} completed`;
+}
+
+function restartListening() {
+    initListeningLesson();
+}
+
+// ============================================
+// Tone Drill Lesson Logic
+// ============================================
+
+let tonesWordIndex = 0;
+let tonesCorrectCount = 0;
+let tonesStartTime = null;
+
+const TONE_NAMES = {
+    1: 'First tone (flat)',
+    2: 'Second tone (rising)',
+    3: 'Third tone (dip)',
+    4: 'Fourth tone (falling)',
+    5: 'Neutral tone'
+};
+
+function initTonesLesson() {
+    // Reset state
+    tonesWordIndex = 0;
+    tonesCorrectCount = 0;
+    tonesStartTime = Date.now();
+
+    // Update lesson title with pinyin
+    const titlePinyin = currentLesson.titlePinyin ? ` <span class="title-pinyin">(${currentLesson.titlePinyin})</span>` : '';
+    document.getElementById('lessonTitle').innerHTML =
+        `${currentLesson.icon} ${currentLesson.titleChinese}${titlePinyin}`;
+
+    renderToneWord();
+    updateTonesProgress();
+}
+
+function renderToneWord() {
+    const container = document.getElementById('tonesContainer');
+    const word = currentLesson.words[tonesWordIndex];
+
+    // Create tone choices (1-4, or include 5 for neutral)
+    const toneChoices = currentLesson.includeNeutral ? [1, 2, 3, 4, 5] : [1, 2, 3, 4];
+
+    container.innerHTML = `
+        <div class="tone-card">
+            <button class="tone-listen-button" onclick="speakToneWord()">
+                🔊 Listen
+            </button>
+            <div class="tone-character">${word.character}</div>
+            <div class="tone-hint">${word.english}</div>
+        </div>
+
+        <div class="tone-instruction">
+            What tone is this?
+        </div>
+
+        <div class="tone-choices" id="toneChoices">
+            ${toneChoices.map(tone => `
+                <button class="tone-choice" data-tone="${tone}" onclick="selectTone(${tone})">
+                    <span class="tone-number">${tone === 5 ? '·' : tone}</span>
+                    <span class="tone-name">${TONE_NAMES[tone]}</span>
+                </button>
+            `).join('')}
+        </div>
+
+        <div id="tonesFeedback" class="tones-feedback"></div>
+
+        <div class="tones-next" id="tonesNextContainer" style="display: none;">
+            <button class="primary-button" onclick="nextToneWord()">
+                Next Word →
+            </button>
+        </div>
+    `;
+
+    // Auto-play audio after a short delay
+    setTimeout(() => speakToneWord(), 500);
+}
+
+function speakToneWord() {
+    const word = currentLesson.words[tonesWordIndex];
+
+    if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(word.character);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.7; // Slower for tone recognition
+
+        const voices = speechSynthesis.getVoices();
+        const chineseVoice = voices.find(v => v.lang.startsWith('zh'));
+        if (chineseVoice) {
+            utterance.voice = chineseVoice;
+        }
+
+        speechSynthesis.speak(utterance);
+    }
+}
+
+function selectTone(selectedTone) {
+    const word = currentLesson.words[tonesWordIndex];
+    const feedback = document.getElementById('tonesFeedback');
+    const nextContainer = document.getElementById('tonesNextContainer');
+    const buttons = document.querySelectorAll('.tone-choice');
+
+    // Disable all buttons
+    buttons.forEach(btn => btn.classList.add('disabled'));
+
+    // Check answer
+    const isCorrect = selectedTone === word.tone;
+    const selectedButton = document.querySelector(`.tone-choice[data-tone="${selectedTone}"]`);
+
+    if (isCorrect) {
+        tonesCorrectCount++;
+        selectedButton.classList.add('correct');
+        feedback.innerHTML = `✓ Correct! <strong>${word.pinyin}</strong>`;
+        feedback.className = 'tones-feedback visible correct';
+
+        // Record progress
+        recordSpeakingAttempt(currentLesson.id, tonesWordIndex, 100, true);
+    } else {
+        selectedButton.classList.add('incorrect');
+        // Highlight correct answer
+        buttons.forEach(btn => {
+            if (parseInt(btn.dataset.tone) === word.tone) {
+                btn.classList.add('correct');
+            }
+        });
+        feedback.innerHTML = `✗ It was tone ${word.tone}: <strong>${word.pinyin}</strong>`;
+        feedback.className = 'tones-feedback visible incorrect';
+
+        // Record attempt
+        recordSpeakingAttempt(currentLesson.id, tonesWordIndex, 0, false);
+    }
+
+    // Show next button
+    nextContainer.style.display = 'flex';
+    updateTonesProgress();
+}
+
+function nextToneWord() {
+    tonesWordIndex++;
+
+    if (tonesWordIndex >= currentLesson.words.length) {
+        showTonesComplete();
+    } else {
+        renderToneWord();
+        updateTonesProgress();
+    }
+}
+
+function updateTonesProgress() {
+    const total = currentLesson.words.length;
+    const completed = tonesWordIndex;
+    const percent = (completed / total) * 100;
+
+    document.getElementById('tonesProgressFill').style.width = `${percent}%`;
+    document.getElementById('tonesProgressText').textContent = `${completed}/${total} completed`;
+}
+
+function showTonesComplete() {
+    const container = document.getElementById('tonesContainer');
+    const total = currentLesson.words.length;
+    const score = Math.round((tonesCorrectCount / total) * 100);
+
+    // Calculate time
+    const timeSeconds = Math.round((Date.now() - tonesStartTime) / 1000);
+    const minutes = Math.floor(timeSeconds / 60);
+    const seconds = timeSeconds % 60;
+    const timeDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+    container.innerHTML = `
+        <div class="matching-complete">
+            <div class="complete-icon">${score >= 80 ? '🏆' : score >= 50 ? '🎉' : '📚'}</div>
+            <h3>${score >= 80 ? 'Excellent!' : score >= 50 ? 'Good job!' : 'Keep practicing!'}</h3>
+            <p>You got <strong>${tonesCorrectCount}/${total}</strong> tones correct</p>
+            <p>Score: <strong>${score}%</strong></p>
+            <p class="best-time">Time: ${timeDisplay}</p>
+            <button class="primary-button" onclick="restartTones()">Practice Again</button>
+            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+        </div>
+    `;
+
+    // Update progress bar to 100%
+    document.getElementById('tonesProgressFill').style.width = '100%';
+    document.getElementById('tonesProgressText').textContent = `${total}/${total} completed`;
+}
+
+function restartTones() {
+    initTonesLesson();
+}
+
+// ============================================
+// Sentence Ordering Lesson Logic
+// ============================================
+
+let orderingSentenceIndex = 0;
+let orderingCorrectCount = 0;
+let orderingStartTime = null;
+let orderingSelectedWords = [];
+
+function initOrderingLesson() {
+    // Reset state
+    orderingSentenceIndex = 0;
+    orderingCorrectCount = 0;
+    orderingStartTime = Date.now();
+    orderingSelectedWords = [];
+
+    // Update lesson title with pinyin
+    const titlePinyin = currentLesson.titlePinyin ? ` <span class="title-pinyin">(${currentLesson.titlePinyin})</span>` : '';
+    document.getElementById('lessonTitle').innerHTML =
+        `${currentLesson.icon} ${currentLesson.titleChinese}${titlePinyin}`;
+
+    renderOrderingSentence();
+    updateOrderingProgress();
+}
+
+function renderOrderingSentence() {
+    const container = document.getElementById('orderingContainer');
+    const sentence = currentLesson.sentences[orderingSentenceIndex];
+
+    // Reset selected words
+    orderingSelectedWords = [];
+
+    // Shuffle the words
+    const shuffledWords = [...sentence.words];
+    shuffleArray(shuffledWords);
+
+    container.innerHTML = `
+        <div class="ordering-card">
+            <div class="ordering-english">${sentence.english}</div>
+            <div class="ordering-hint">${sentence.pinyin}</div>
+        </div>
+
+        <div class="ordering-instruction">
+            Tap words in order to form the sentence
+        </div>
+
+        <div class="ordering-slots" id="orderingSlots">
+            <div class="ordering-placeholder">Tap words below to build sentence</div>
+        </div>
+
+        <div class="ordering-words" id="orderingWords">
+            ${shuffledWords.map((word, i) => `
+                <button class="ordering-word" data-word="${escapeHtml(word)}" data-original-index="${i}"
+                        onclick="selectOrderingWord('${escapeHtml(word)}', this)">
+                    ${word}
+                </button>
+            `).join('')}
+        </div>
+
+        <div id="orderingFeedback" class="ordering-feedback"></div>
+
+        <div class="ordering-actions">
+            <button class="secondary-button" onclick="clearOrdering()">Clear</button>
+            <button class="primary-button" onclick="checkOrdering()">Check Answer</button>
+        </div>
+
+        <div class="ordering-next" id="orderingNextContainer" style="display: none;">
+            <button class="primary-button" onclick="nextOrderingSentence()">
+                Next Sentence →
+            </button>
+        </div>
+    `;
+}
+
+function selectOrderingWord(word, buttonEl) {
+    // Check if already used
+    if (buttonEl.classList.contains('used')) return;
+
+    // Add to selected words
+    orderingSelectedWords.push(word);
+    buttonEl.classList.add('used');
+
+    // Update slots display
+    updateOrderingSlots();
+}
+
+function removeOrderingWord(index) {
+    const removedWord = orderingSelectedWords[index];
+    orderingSelectedWords.splice(index, 1);
+
+    // Find and re-enable the button
+    const buttons = document.querySelectorAll('.ordering-word');
+    for (const btn of buttons) {
+        if (btn.dataset.word === removedWord && btn.classList.contains('used')) {
+            btn.classList.remove('used');
+            break;
+        }
+    }
+
+    updateOrderingSlots();
+}
+
+function updateOrderingSlots() {
+    const slotsContainer = document.getElementById('orderingSlots');
+
+    if (orderingSelectedWords.length === 0) {
+        slotsContainer.innerHTML = '<div class="ordering-placeholder">Tap words below to build sentence</div>';
+    } else {
+        slotsContainer.innerHTML = orderingSelectedWords.map((word, i) => `
+            <span class="ordering-slot" onclick="removeOrderingWord(${i})">${word}</span>
+        `).join('');
+    }
+}
+
+function clearOrdering() {
+    orderingSelectedWords = [];
+
+    // Re-enable all word buttons
+    document.querySelectorAll('.ordering-word').forEach(btn => {
+        btn.classList.remove('used');
+    });
+
+    updateOrderingSlots();
+
+    // Clear feedback
+    document.getElementById('orderingFeedback').className = 'ordering-feedback';
+}
+
+function checkOrdering() {
+    const sentence = currentLesson.sentences[orderingSentenceIndex];
+    const feedback = document.getElementById('orderingFeedback');
+    const nextContainer = document.getElementById('orderingNextContainer');
+
+    // Check if answer matches
+    const userAnswer = orderingSelectedWords.join('');
+    const correctAnswer = sentence.words.join('');
+    const isCorrect = userAnswer === correctAnswer;
+
+    // Disable word buttons
+    document.querySelectorAll('.ordering-word').forEach(btn => {
+        btn.classList.add('disabled');
+    });
+
+    // Disable slot clicking
+    document.querySelectorAll('.ordering-slot').forEach(slot => {
+        slot.style.pointerEvents = 'none';
+    });
+
+    if (isCorrect) {
+        orderingCorrectCount++;
+        document.getElementById('orderingSlots').classList.add('correct');
+        feedback.textContent = '✓ Correct!';
+        feedback.className = 'ordering-feedback visible correct';
+
+        // Record progress
+        recordSpeakingAttempt(currentLesson.id, orderingSentenceIndex, 100, true);
+    } else {
+        document.getElementById('orderingSlots').classList.add('incorrect');
+        feedback.innerHTML = `✗ The correct order was: <strong>${sentence.words.join('')}</strong>`;
+        feedback.className = 'ordering-feedback visible incorrect';
+
+        // Record attempt
+        recordSpeakingAttempt(currentLesson.id, orderingSentenceIndex, 0, false);
+    }
+
+    // Hide action buttons, show next
+    document.querySelector('.ordering-actions').style.display = 'none';
+    nextContainer.style.display = 'flex';
+    updateOrderingProgress();
+}
+
+function nextOrderingSentence() {
+    orderingSentenceIndex++;
+
+    if (orderingSentenceIndex >= currentLesson.sentences.length) {
+        showOrderingComplete();
+    } else {
+        renderOrderingSentence();
+        updateOrderingProgress();
+    }
+}
+
+function updateOrderingProgress() {
+    const total = currentLesson.sentences.length;
+    const completed = orderingSentenceIndex;
+    const percent = (completed / total) * 100;
+
+    document.getElementById('orderingProgressFill').style.width = `${percent}%`;
+    document.getElementById('orderingProgressText').textContent = `${completed}/${total} completed`;
+}
+
+function showOrderingComplete() {
+    const container = document.getElementById('orderingContainer');
+    const total = currentLesson.sentences.length;
+    const score = Math.round((orderingCorrectCount / total) * 100);
+
+    // Calculate time
+    const timeSeconds = Math.round((Date.now() - orderingStartTime) / 1000);
+    const minutes = Math.floor(timeSeconds / 60);
+    const seconds = timeSeconds % 60;
+    const timeDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+    container.innerHTML = `
+        <div class="matching-complete">
+            <div class="complete-icon">${score >= 80 ? '🏆' : score >= 50 ? '🎉' : '📚'}</div>
+            <h3>${score >= 80 ? 'Excellent!' : score >= 50 ? 'Good job!' : 'Keep practicing!'}</h3>
+            <p>You got <strong>${orderingCorrectCount}/${total}</strong> sentences correct</p>
+            <p>Score: <strong>${score}%</strong></p>
+            <p class="best-time">Time: ${timeDisplay}</p>
+            <button class="primary-button" onclick="restartOrdering()">Practice Again</button>
+            <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
+        </div>
+    `;
+
+    // Update progress bar to 100%
+    document.getElementById('orderingProgressFill').style.width = '100%';
+    document.getElementById('orderingProgressText').textContent = `${total}/${total} completed`;
+}
+
+function restartOrdering() {
+    initOrderingLesson();
+}
+
+// ============================================
 // Global Exports (for onclick handlers in HTML)
 // ============================================
 
@@ -1206,3 +1865,17 @@ window.selectClozeWord = selectClozeWord;
 window.nextClozeSentence = nextClozeSentence;
 window.restartCloze = restartCloze;
 window.speakClozeSentence = speakClozeSentence;
+window.selectListeningChoice = selectListeningChoice;
+window.nextListeningQuestion = nextListeningQuestion;
+window.restartListening = restartListening;
+window.speakListeningAudio = speakListeningAudio;
+window.selectTone = selectTone;
+window.nextToneWord = nextToneWord;
+window.restartTones = restartTones;
+window.speakToneWord = speakToneWord;
+window.selectOrderingWord = selectOrderingWord;
+window.removeOrderingWord = removeOrderingWord;
+window.clearOrdering = clearOrdering;
+window.checkOrdering = checkOrdering;
+window.nextOrderingSentence = nextOrderingSentence;
+window.restartOrdering = restartOrdering;

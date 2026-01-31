@@ -936,6 +936,352 @@
             font-size: 10px;
             color: var(--text-secondary);
         }
+
+        /* Listening Quiz Styles */
+        .listening-view {
+            display: none;
+        }
+
+        .listening-view:not(.hidden) {
+            display: block;
+        }
+
+        .listening-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 32px 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .listening-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .listening-instruction {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .listen-big-button {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .listen-big-button:hover {
+            transform: scale(1.05);
+        }
+
+        .listen-big-button:active {
+            transform: scale(0.95);
+        }
+
+        .listening-choices {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .listening-choice {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 12px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .listening-choice:hover:not(.disabled) {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .listening-choice.correct {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .listening-choice.incorrect {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .listening-choice.disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        /* Tone Drill Styles */
+        .tones-view {
+            display: none;
+        }
+
+        .tones-view:not(.hidden) {
+            display: block;
+        }
+
+        .tone-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 32px 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .tone-character {
+            font-size: 72px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .tone-pinyin {
+            font-size: 24px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .tone-english {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-bottom: 16px;
+        }
+
+        .tone-choices {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .tone-choice {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .tone-choice:hover:not(.disabled) {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .tone-choice.correct {
+            border-color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .tone-choice.incorrect {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .tone-choice.disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        .tone-number {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .tone-mark {
+            font-size: 20px;
+            color: var(--text-secondary);
+        }
+
+        .tone-name {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Sentence Ordering Styles */
+        .ordering-view {
+            display: none;
+        }
+
+        .ordering-view:not(.hidden) {
+            display: block;
+        }
+
+        .ordering-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .ordering-english {
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 8px;
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+
+        .ordering-pinyin {
+            font-size: 14px;
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .ordering-slots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 60px;
+            padding: 16px;
+            background: var(--bg);
+            border-radius: 12px;
+            border: 2px dashed var(--border);
+            margin-bottom: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ordering-slots.has-words {
+            border-style: solid;
+            border-color: var(--primary);
+        }
+
+        .ordering-slot-word {
+            background: var(--primary);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ordering-slot-word:hover {
+            opacity: 0.8;
+        }
+
+        .ordering-placeholder {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .ordering-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .ordering-word {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ordering-word:hover:not(.used):not(.disabled) {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .ordering-word.used {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        .ordering-word.disabled {
+            cursor: default;
+        }
+
+        .ordering-result {
+            text-align: center;
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 16px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .ordering-result.visible {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        .ordering-result.correct {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .ordering-result.incorrect {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .ordering-controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .clear-button {
+            background: var(--card);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clear-button:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .check-button {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .check-button:hover {
+            background: #2563eb;
+        }
+
+        .check-button:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -1059,6 +1405,54 @@
 
                 <div id="clozeContainer">
                     <!-- Cloze sentence and choices rendered here -->
+                </div>
+            </div>
+
+            <!-- Listening Quiz View -->
+            <div id="listeningView" class="listening-view hidden">
+                <div class="matching-progress">
+                    <div class="progress-bar">
+                        <div id="listeningProgressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="listeningProgressText">0/0 completed</span>
+                    </div>
+                </div>
+
+                <div id="listeningContainer">
+                    <!-- Listening quiz content rendered here -->
+                </div>
+            </div>
+
+            <!-- Tone Drill View -->
+            <div id="tonesView" class="tones-view hidden">
+                <div class="matching-progress">
+                    <div class="progress-bar">
+                        <div id="tonesProgressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="tonesProgressText">0/0 completed</span>
+                    </div>
+                </div>
+
+                <div id="tonesContainer">
+                    <!-- Tone drill content rendered here -->
+                </div>
+            </div>
+
+            <!-- Sentence Ordering View -->
+            <div id="orderingView" class="ordering-view hidden">
+                <div class="matching-progress">
+                    <div class="progress-bar">
+                        <div id="orderingProgressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="orderingProgressText">0/0 completed</span>
+                    </div>
+                </div>
+
+                <div id="orderingContainer">
+                    <!-- Sentence ordering content rendered here -->
                 </div>
             </div>
         </div>

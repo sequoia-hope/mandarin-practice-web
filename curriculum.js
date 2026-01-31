@@ -4,6 +4,9 @@
 // - "speaking" (default): Practice speaking phrases with ASR feedback
 // - "matching": Match characters to their pinyin
 // - "cloze": Fill-in-the-blank with audio and word choices
+// - "listening": Listen to audio and pick what you heard
+// - "tones": Identify which tone a word uses
+// - "ordering": Arrange words into correct sentence order
 
 const CURRICULUM = [
     // Lesson 1: Introductions
@@ -640,6 +643,316 @@ const CURRICULUM = [
                 english: "Go to school in the morning, go to supermarket in the afternoon.",
                 answers: ["学校", "超市"],
                 distractors: ["医院", "银行"]
+            },
+        ]
+    },
+
+    // ============================================
+    // Listening Quiz Lessons
+    // ============================================
+
+    // Lesson 21: HSK1 Listening - Basic Phrases
+    {
+        id: 21,
+        type: "listening",
+        title: "HSK1 Listening Quiz",
+        titleChinese: "听力测试",
+        titlePinyin: "tīnglì cèshì",
+        icon: "👂",
+        description: "Listen and pick what you heard (HSK1)",
+        hskLevel: 1,
+        questions: [
+            {
+                audio: "你好",
+                pinyin: "nǐ hǎo",
+                correct: "你好",
+                choices: ["你好", "你们", "我好", "他好"]
+            },
+            {
+                audio: "谢谢",
+                pinyin: "xièxiè",
+                correct: "谢谢",
+                choices: ["谢谢", "对不起", "再见", "你好"]
+            },
+            {
+                audio: "我是学生",
+                pinyin: "wǒ shì xuéshēng",
+                correct: "我是学生",
+                choices: ["我是学生", "我是老师", "他是学生", "你是学生"]
+            },
+            {
+                audio: "他很高",
+                pinyin: "tā hěn gāo",
+                correct: "他很高",
+                choices: ["他很高", "她很好", "他很好", "他不高"]
+            },
+            {
+                audio: "今天很热",
+                pinyin: "jīntiān hěn rè",
+                correct: "今天很热",
+                choices: ["今天很热", "今天很冷", "明天很热", "昨天很热"]
+            },
+            {
+                audio: "我喜欢吃饭",
+                pinyin: "wǒ xǐhuān chīfàn",
+                correct: "我喜欢吃饭",
+                choices: ["我喜欢吃饭", "我喜欢喝茶", "他喜欢吃饭", "我不喜欢吃饭"]
+            },
+            {
+                audio: "这是我的书",
+                pinyin: "zhè shì wǒ de shū",
+                correct: "这是我的书",
+                choices: ["这是我的书", "那是我的书", "这是你的书", "这是他的书"]
+            },
+            {
+                audio: "你去哪里",
+                pinyin: "nǐ qù nǎlǐ",
+                correct: "你去哪里",
+                choices: ["你去哪里", "你在哪里", "他去哪里", "你来哪里"]
+            },
+        ]
+    },
+
+    // Lesson 22: HSK2 Listening - Daily Conversations
+    {
+        id: 22,
+        type: "listening",
+        title: "HSK2 Listening Quiz",
+        titleChinese: "日常对话",
+        titlePinyin: "rìcháng duìhuà",
+        icon: "🎧",
+        description: "Listen to daily conversations (HSK2)",
+        hskLevel: 2,
+        questions: [
+            {
+                audio: "请问，洗手间在哪里",
+                pinyin: "qǐngwèn, xǐshǒujiān zài nǎlǐ",
+                correct: "请问，洗手间在哪里",
+                choices: ["请问，洗手间在哪里", "请问，学校在哪里", "请问，医院在哪里", "请问，银行在哪里"]
+            },
+            {
+                audio: "我想买一杯咖啡",
+                pinyin: "wǒ xiǎng mǎi yī bēi kāfēi",
+                correct: "我想买一杯咖啡",
+                choices: ["我想买一杯咖啡", "我想喝一杯茶", "我想买一本书", "他想买一杯咖啡"]
+            },
+            {
+                audio: "明天天气怎么样",
+                pinyin: "míngtiān tiānqì zěnmeyàng",
+                correct: "明天天气怎么样",
+                choices: ["明天天气怎么样", "今天天气怎么样", "明天你怎么样", "明天工作怎么样"]
+            },
+            {
+                audio: "我每天早上跑步",
+                pinyin: "wǒ měitiān zǎoshang pǎobù",
+                correct: "我每天早上跑步",
+                choices: ["我每天早上跑步", "我每天晚上跑步", "他每天早上跑步", "我每天早上工作"]
+            },
+            {
+                audio: "这件衣服多少钱",
+                pinyin: "zhè jiàn yīfú duōshǎo qián",
+                correct: "这件衣服多少钱",
+                choices: ["这件衣服多少钱", "那件衣服多少钱", "这本书多少钱", "这个多少钱"]
+            },
+            {
+                audio: "我的手机不见了",
+                pinyin: "wǒ de shǒujī bújiàn le",
+                correct: "我的手机不见了",
+                choices: ["我的手机不见了", "我的钱包不见了", "他的手机不见了", "我的书不见了"]
+            },
+        ]
+    },
+
+    // ============================================
+    // Tone Drill Lessons
+    // ============================================
+
+    // Lesson 23: Tone Recognition - First & Second Tones
+    {
+        id: 23,
+        type: "tones",
+        title: "Tones: 1st & 2nd",
+        titleChinese: "声调练习",
+        titlePinyin: "shēngdiào liànxí",
+        icon: "🎵",
+        description: "Identify 1st and 2nd tones",
+        hskLevel: 1,
+        words: [
+            { character: "妈", pinyin: "mā", english: "mother", tone: 1 },
+            { character: "麻", pinyin: "má", english: "hemp", tone: 2 },
+            { character: "他", pinyin: "tā", english: "he", tone: 1 },
+            { character: "人", pinyin: "rén", english: "person", tone: 2 },
+            { character: "书", pinyin: "shū", english: "book", tone: 1 },
+            { character: "学", pinyin: "xué", english: "study", tone: 2 },
+            { character: "天", pinyin: "tiān", english: "sky/day", tone: 1 },
+            { character: "年", pinyin: "nián", english: "year", tone: 2 },
+            { character: "中", pinyin: "zhōng", english: "middle", tone: 1 },
+            { character: "国", pinyin: "guó", english: "country", tone: 2 },
+            { character: "高", pinyin: "gāo", english: "tall", tone: 1 },
+            { character: "来", pinyin: "lái", english: "come", tone: 2 },
+        ]
+    },
+
+    // Lesson 24: Tone Recognition - Third & Fourth Tones
+    {
+        id: 24,
+        type: "tones",
+        title: "Tones: 3rd & 4th",
+        titleChinese: "声调练习",
+        titlePinyin: "shēngdiào liànxí",
+        icon: "🎶",
+        description: "Identify 3rd and 4th tones",
+        hskLevel: 1,
+        words: [
+            { character: "马", pinyin: "mǎ", english: "horse", tone: 3 },
+            { character: "骂", pinyin: "mà", english: "scold", tone: 4 },
+            { character: "你", pinyin: "nǐ", english: "you", tone: 3 },
+            { character: "是", pinyin: "shì", english: "is/am", tone: 4 },
+            { character: "好", pinyin: "hǎo", english: "good", tone: 3 },
+            { character: "大", pinyin: "dà", english: "big", tone: 4 },
+            { character: "我", pinyin: "wǒ", english: "I/me", tone: 3 },
+            { character: "去", pinyin: "qù", english: "go", tone: 4 },
+            { character: "小", pinyin: "xiǎo", english: "small", tone: 3 },
+            { character: "四", pinyin: "sì", english: "four", tone: 4 },
+            { character: "很", pinyin: "hěn", english: "very", tone: 3 },
+            { character: "看", pinyin: "kàn", english: "look", tone: 4 },
+        ]
+    },
+
+    // Lesson 25: Tone Recognition - All Four Tones
+    {
+        id: 25,
+        type: "tones",
+        title: "Tones: All Four",
+        titleChinese: "四声练习",
+        titlePinyin: "sìshēng liànxí",
+        icon: "🎼",
+        description: "Identify all four tones",
+        hskLevel: 1,
+        words: [
+            { character: "妈", pinyin: "mā", english: "mother", tone: 1 },
+            { character: "麻", pinyin: "má", english: "hemp", tone: 2 },
+            { character: "马", pinyin: "mǎ", english: "horse", tone: 3 },
+            { character: "骂", pinyin: "mà", english: "scold", tone: 4 },
+            { character: "八", pinyin: "bā", english: "eight", tone: 1 },
+            { character: "拔", pinyin: "bá", english: "pull", tone: 2 },
+            { character: "把", pinyin: "bǎ", english: "hold", tone: 3 },
+            { character: "爸", pinyin: "bà", english: "father", tone: 4 },
+            { character: "衣", pinyin: "yī", english: "clothes", tone: 1 },
+            { character: "姨", pinyin: "yí", english: "aunt", tone: 2 },
+            { character: "椅", pinyin: "yǐ", english: "chair", tone: 3 },
+            { character: "意", pinyin: "yì", english: "meaning", tone: 4 },
+        ]
+    },
+
+    // ============================================
+    // Sentence Ordering Lessons
+    // ============================================
+
+    // Lesson 26: HSK1 Word Order - Basic Sentences
+    {
+        id: 26,
+        type: "ordering",
+        title: "HSK1 Word Order",
+        titleChinese: "词序练习",
+        titlePinyin: "cíxù liànxí",
+        icon: "🔀",
+        description: "Arrange words into correct order (HSK1)",
+        hskLevel: 1,
+        sentences: [
+            {
+                correct: ["我", "是", "学生"],
+                english: "I am a student",
+                pinyin: "wǒ shì xuéshēng"
+            },
+            {
+                correct: ["他", "很", "高"],
+                english: "He is very tall",
+                pinyin: "tā hěn gāo"
+            },
+            {
+                correct: ["你", "叫", "什么", "名字"],
+                english: "What is your name?",
+                pinyin: "nǐ jiào shénme míngzì"
+            },
+            {
+                correct: ["我", "喜欢", "吃", "中国菜"],
+                english: "I like to eat Chinese food",
+                pinyin: "wǒ xǐhuān chī zhōngguó cài"
+            },
+            {
+                correct: ["今天", "天气", "很", "好"],
+                english: "The weather is very good today",
+                pinyin: "jīntiān tiānqì hěn hǎo"
+            },
+            {
+                correct: ["她", "是", "我的", "朋友"],
+                english: "She is my friend",
+                pinyin: "tā shì wǒ de péngyǒu"
+            },
+            {
+                correct: ["我", "想", "喝", "茶"],
+                english: "I want to drink tea",
+                pinyin: "wǒ xiǎng hē chá"
+            },
+            {
+                correct: ["这", "是", "什么"],
+                english: "What is this?",
+                pinyin: "zhè shì shénme"
+            },
+        ]
+    },
+
+    // Lesson 27: HSK2 Word Order - Complex Sentences
+    {
+        id: 27,
+        type: "ordering",
+        title: "HSK2 Word Order",
+        titleChinese: "句子排序",
+        titlePinyin: "jùzi páixù",
+        icon: "📋",
+        description: "Arrange complex sentences (HSK2)",
+        hskLevel: 2,
+        sentences: [
+            {
+                correct: ["我", "每天", "早上", "六点", "起床"],
+                english: "I get up at 6 every morning",
+                pinyin: "wǒ měitiān zǎoshang liù diǎn qǐchuáng"
+            },
+            {
+                correct: ["他", "在", "图书馆", "学习", "中文"],
+                english: "He studies Chinese at the library",
+                pinyin: "tā zài túshūguǎn xuéxí zhōngwén"
+            },
+            {
+                correct: ["请", "给", "我", "一杯", "水"],
+                english: "Please give me a glass of water",
+                pinyin: "qǐng gěi wǒ yī bēi shuǐ"
+            },
+            {
+                correct: ["我", "昨天", "去", "超市", "买", "东西"],
+                english: "I went to the supermarket yesterday to buy things",
+                pinyin: "wǒ zuótiān qù chāoshì mǎi dōngxi"
+            },
+            {
+                correct: ["你", "可以", "帮", "我", "吗"],
+                english: "Can you help me?",
+                pinyin: "nǐ kěyǐ bāng wǒ ma"
+            },
+            {
+                correct: ["这个", "苹果", "比", "那个", "大"],
+                english: "This apple is bigger than that one",
+                pinyin: "zhège píngguǒ bǐ nàge dà"
+            },
+            {
+                correct: ["我", "觉得", "学", "中文", "很", "有意思"],
+                english: "I think learning Chinese is very interesting",
+                pinyin: "wǒ juéde xué zhōngwén hěn yǒuyìsi"
+            },
+            {
+                correct: ["她", "从", "北京", "来"],
+                english: "She comes from Beijing",
+                pinyin: "tā cóng běijīng lái"
             },
         ]
     },
