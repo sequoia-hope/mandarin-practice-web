@@ -2,6 +2,13 @@
 
 import { initWhisperModel, transcribeAudio, isWhisperReady } from './whisper-asr.js';
 import { AudioRecorder, resampleTo16kHz } from './audio-capture.js';
+import {
+    loadProgress,
+    getLessonProgress,
+    recordSpeakingAttempt,
+    recordMatchingCompletion,
+    getStats
+} from './storage.js';
 
 // ============================================
 // State
@@ -59,25 +66,89 @@ function updateASRSwitcher() {
 
 function renderLessonList() {
     const container = document.getElementById('lessonList');
+    const progress = loadProgress();
+
     container.innerHTML = CURRICULUM.map((lesson, index) => {
         const lessonType = lesson.type || 'speaking';
-        const typeLabel = lessonType === 'matching' ? 'match' : 'speak';
-        const typeIcon = lessonType === 'matching' ? '🔗' : '🎤';
+        const lessonProgress = getLessonProgress(progress, lesson.id);
+
+        // Calculate progress display
+        let progressDisplay = '';
+        let progressClass = '';
+
+        if (lessonType === 'matching') {
+            if (lessonProgress.matchCompleted) {
+                progressDisplay = '✓';
+                progressClass = 'completed';
+            } else {
+                progressDisplay = `${lesson.phrases.length} match 🔗`;
+            }
+        } else {
+            const completed = lessonProgress.completedPhrases.length;
+            const total = lesson.phrases.length;
+            if (completed === total && total > 0) {
+                progressDisplay = '✓';
+                progressClass = 'completed';
+            } else if (completed > 0) {
+                progressDisplay = `${completed}/${total} 🎤`;
+                progressClass = 'in-progress';
+            } else {
+                progressDisplay = `${total} speak 🎤`;
+            }
+        }
+
         return `
         <div class="lesson-card" onclick="startLesson(${index})">
-            <div class="lesson-number">${index + 1}</div>
+            <div class="lesson-number ${progressClass}">${progressClass === 'completed' ? '✓' : index + 1}</div>
             <div class="lesson-info">
                 <div class="lesson-title">${lesson.icon} ${lesson.title}</div>
                 <div class="lesson-chinese">${lesson.titleChinese}</div>
                 <div class="lesson-pinyin">${lesson.titlePinyin || ''}</div>
             </div>
-            <div class="lesson-count">
-                <span>${lesson.phrases.length}</span>
-                ${typeLabel} ${typeIcon}
+            <div class="lesson-count ${progressClass}">
+                ${progressDisplay}
             </div>
         </div>
     `;
     }).join('');
+
+    // Render stats section
+    renderStats();
+}
+
+function renderStats() {
+    const stats = getStats();
+    const statsContainer = document.getElementById('statsContainer');
+
+    if (!statsContainer) return;
+
+    if (stats.totalAttempts === 0) {
+        statsContainer.innerHTML = `
+            <div class="stats-empty">
+                Start practicing to track your progress!
+            </div>
+        `;
+        return;
+    }
+
+    const streakEmoji = stats.streakDays >= 7 ? '🔥' : stats.streakDays >= 3 ? '⭐' : '📅';
+
+    statsContainer.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-value">${stats.streakDays}</span>
+                <span class="stat-label">${streakEmoji} Day Streak</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">${stats.totalCompleted}</span>
+                <span class="stat-label">Phrases Mastered</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">${stats.totalAttempts}</span>
+                <span class="stat-label">Total Attempts</span>
+            </div>
+        </div>
+    `;
 }
 
 // ============================================
@@ -422,6 +493,9 @@ function handleTranscription(transcript) {
             resultScore.className = 'result-score fail';
         }
 
+        // Save progress to localStorage
+        recordSpeakingAttempt(currentLesson.id, currentPhraseIndex, result.score, result.passed);
+
         resultFeedback.textContent = result.feedback;
         resultScore.textContent = `${result.score}%`;
         resultTranscription.textContent = transcript || '(nothing detected)';
@@ -550,6 +624,9 @@ function showMenu() {
     matchedPairs = new Set();
     selectedCharacter = null;
     selectedPinyin = null;
+
+    // Refresh lesson list to show updated progress
+    renderLessonList();
 }
 
 function nextPhrase() {
@@ -624,6 +701,7 @@ let matchingPairs = [];
 let selectedCharacter = null;
 let selectedPinyin = null;
 let matchedPairs = new Set();
+let matchingStartTime = null;
 
 function initMatchingLesson() {
     // Reset state
@@ -631,6 +709,7 @@ function initMatchingLesson() {
     selectedCharacter = null;
     selectedPinyin = null;
     matchedPairs = new Set();
+    matchingStartTime = Date.now();
 
     // Update lesson title with pinyin
     const titlePinyin = currentLesson.titlePinyin ? ` <span class="title-pinyin">(${currentLesson.titlePinyin})</span>` : '';
@@ -782,11 +861,29 @@ function updateMatchingProgress() {
 
 function showMatchingComplete() {
     const container = document.getElementById('matchingContainer');
+
+    // Calculate time taken
+    const timeSeconds = Math.round((Date.now() - matchingStartTime) / 1000);
+    const minutes = Math.floor(timeSeconds / 60);
+    const seconds = timeSeconds % 60;
+    const timeDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+    // Save progress
+    const progress = recordMatchingCompletion(currentLesson.id, timeSeconds);
+    const lessonProgress = getLessonProgress(progress, currentLesson.id);
+    const bestTime = lessonProgress.bestMatchTime;
+    const bestMinutes = Math.floor(bestTime / 60);
+    const bestSeconds = bestTime % 60;
+    const bestTimeDisplay = bestMinutes > 0 ? `${bestMinutes}m ${bestSeconds}s` : `${bestSeconds}s`;
+
+    const isNewBest = timeSeconds <= bestTime;
+
     container.innerHTML = `
         <div class="matching-complete">
-            <div class="complete-icon">🎉</div>
-            <h3>Great job!</h3>
-            <p>You matched all ${matchingPairs.length} pairs correctly!</p>
+            <div class="complete-icon">${isNewBest ? '🏆' : '🎉'}</div>
+            <h3>${isNewBest ? 'New Best Time!' : 'Great job!'}</h3>
+            <p>You matched all ${matchingPairs.length} pairs in <strong>${timeDisplay}</strong></p>
+            <p class="best-time">Best time: ${bestTimeDisplay}</p>
             <button class="primary-button" onclick="restartMatching()">Practice Again</button>
             <button class="secondary-button" onclick="showMenu()">Back to Lessons</button>
         </div>
