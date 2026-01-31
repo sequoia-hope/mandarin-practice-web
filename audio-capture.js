@@ -188,7 +188,7 @@ export class AudioRecorder {
      * @returns {boolean}
      */
     isRecording() {
-        return this.mediaRecorder && this.mediaRecorder.state === 'recording';
+        return !!(this.mediaRecorder && this.mediaRecorder.state === 'recording');
     }
 }
 

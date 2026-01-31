@@ -1,5 +1,6 @@
 .claude/
 models/
+node_modules/
 *.pem
 *.key
 *.crt
