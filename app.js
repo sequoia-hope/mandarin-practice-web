@@ -4,10 +4,18 @@ import { initWhisperModel, transcribeAudio, isWhisperReady } from './whisper-asr
 import { AudioRecorder, resampleTo16kHz } from './audio-capture.js';
 import {
     loadProgress,
+    saveProgress,
     getLessonProgress,
     recordSpeakingAttempt,
     recordMatchingCompletion,
-    getStats
+    getStats,
+    loadProfile,
+    saveProfile,
+    isProfileSetup,
+    setupProfile,
+    getUserName,
+    CHINESE_NAMES,
+    AVATAR_EMOJIS
 } from './storage.js';
 
 // ============================================
@@ -27,6 +35,12 @@ let isModelLoaded = false;
 let asrMode = 'webspeech'; // 'webspeech' or 'whisper'
 let audioRecorder = null;  // AudioRecorder instance for Whisper mode
 
+// Daily curriculum state
+let currentDay = null;
+let currentActivityIndex = 0;
+let selectedAvatar = null;
+let selectedName = null;
+
 /**
  * Get ASR mode from URL parameter
  * @returns {'webspeech' | 'whisper'}
@@ -45,10 +59,27 @@ function getASRMode() {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    renderLessonList();
+    initApp();
+});
+
+function initApp() {
+    // Check if profile is set up
+    if (!isProfileSetup()) {
+        showProfileSetup();
+    } else {
+        showProfileHeader();
+    }
+
+    // Render the daily lessons UI
+    renderDailyLessons();
+
+    // Initialize speech recognition
     initWhisper();
     updateASRSwitcher();
-});
+
+    // Render stats
+    renderStats();
+}
 
 function updateASRSwitcher() {
     const mode = getASRMode();
@@ -63,6 +94,385 @@ function updateASRSwitcher() {
         linkWhisper.classList.remove('active');
     }
 }
+
+// ============================================
+// Profile Setup
+// ============================================
+
+function showProfileSetup() {
+    const modal = document.getElementById('profileSetupModal');
+    const avatarGrid = document.getElementById('avatarGrid');
+    const nameGrid = document.getElementById('nameGrid');
+
+    // Render avatar options
+    avatarGrid.innerHTML = AVATAR_EMOJIS.map(emoji => `
+        <button class="avatar-option" data-avatar="${emoji}" onclick="selectAvatar('${emoji}')">
+            ${emoji}
+        </button>
+    `).join('');
+
+    // Render name options
+    nameGrid.innerHTML = CHINESE_NAMES.map(name => `
+        <button class="name-option" data-name="${name.chinese}" onclick="selectName('${name.chinese}')">
+            <div class="name-chinese">${name.chinese}</div>
+            <div class="name-pinyin">${name.pinyin}</div>
+            <div class="name-english">${name.english}</div>
+        </button>
+    `).join('');
+
+    // Load existing selections if editing
+    const profile = loadProfile();
+    if (profile.avatar) {
+        selectedAvatar = profile.avatar;
+        document.querySelector(`.avatar-option[data-avatar="${profile.avatar}"]`)?.classList.add('selected');
+    }
+    if (profile.chineseName) {
+        selectedName = profile.chineseName;
+        document.querySelector(`.name-option[data-name="${profile.chineseName}"]`)?.classList.add('selected');
+    }
+
+    updateSetupButton();
+    modal.classList.remove('hidden');
+    document.getElementById('defaultHeader').style.display = 'block';
+    document.getElementById('profileHeader').style.display = 'none';
+}
+
+function selectAvatar(emoji) {
+    selectedAvatar = emoji;
+    document.querySelectorAll('.avatar-option').forEach(btn => btn.classList.remove('selected'));
+    document.querySelector(`.avatar-option[data-avatar="${emoji}"]`).classList.add('selected');
+    updateSetupButton();
+}
+
+function selectName(chinese) {
+    selectedName = chinese;
+    document.querySelectorAll('.name-option').forEach(btn => btn.classList.remove('selected'));
+    document.querySelector(`.name-option[data-name="${chinese}"]`).classList.add('selected');
+    updateSetupButton();
+}
+
+function updateSetupButton() {
+    const btn = document.getElementById('setupCompleteBtn');
+    btn.disabled = !selectedAvatar || !selectedName;
+}
+
+function completeProfileSetup() {
+    if (!selectedAvatar || !selectedName) return;
+
+    setupProfile(selectedAvatar, selectedName);
+    document.getElementById('profileSetupModal').classList.add('hidden');
+    showProfileHeader();
+    renderDailyLessons();
+}
+
+function showProfileHeader() {
+    const profile = loadProfile();
+    if (!profile.setupComplete) return;
+
+    const userName = getUserName();
+    document.getElementById('profileAvatar').textContent = profile.avatar;
+    document.getElementById('profileName').textContent = userName?.chinese || profile.chineseName;
+    document.getElementById('profileNamePinyin').textContent = userName?.pinyin || '';
+
+    document.getElementById('defaultHeader').style.display = 'none';
+    document.getElementById('profileHeader').style.display = 'flex';
+}
+
+// ============================================
+// Daily Lessons UI
+// ============================================
+
+function renderDailyLessons() {
+    const container = document.getElementById('dailyLessonList');
+    const progress = loadProgress();
+
+    if (!window.DAILY_CURRICULUM) {
+        // Fallback to legacy lesson list if daily curriculum not loaded
+        renderLessonList();
+        return;
+    }
+
+    // Find user's current day based on progress
+    const currentDayIndex = findCurrentDay(progress);
+
+    // Render today's card
+    renderTodayCard(currentDayIndex);
+
+    // Render all days
+    container.innerHTML = window.DAILY_CURRICULUM.map((day, index) => {
+        const dayProgress = getDayProgress(progress, day);
+        const isLocked = index > currentDayIndex;
+        const isCompleted = dayProgress.completed;
+        const isExpanded = index === currentDayIndex;
+
+        return `
+            <div class="day-card ${isLocked ? 'locked' : ''} ${isCompleted ? 'completed' : ''} ${isExpanded ? 'expanded' : ''}"
+                 data-day="${day.day}">
+                <div class="day-header" onclick="toggleDayCard(${index}, ${isLocked})">
+                    <div class="day-icon">${day.icon}</div>
+                    <div class="day-info">
+                        <div class="day-number">Day ${day.day}</div>
+                        <div class="day-title">${day.title}</div>
+                        <div class="day-title-chinese">${day.titleChinese} · ${day.titlePinyin}</div>
+                    </div>
+                    <div class="day-progress">
+                        ${isLocked ? '<div class="day-progress-icon">🔒</div>' :
+                          isCompleted ? '<div class="day-progress-icon">✅</div>' :
+                          `<div class="day-progress-text">${dayProgress.completedActivities}/${day.activities.length}</div>`}
+                    </div>
+                </div>
+                <div class="day-activities">
+                    ${day.activities.map((activity, actIndex) => {
+                        const activityCompleted = isActivityCompleted(progress, day.day, actIndex);
+                        const activityLocked = !isCompleted && actIndex > dayProgress.completedActivities;
+                        const typeIcon = getActivityTypeIcon(activity.type);
+                        const typeClass = `type-icon-${activity.type}`;
+
+                        return `
+                            <div class="activity-item ${activityCompleted ? 'completed' : ''} ${activityLocked ? 'locked' : ''}"
+                                 onclick="startDailyActivity(${index}, ${actIndex}, ${activityLocked})">
+                                <div class="activity-icon ${typeClass}">${typeIcon}</div>
+                                <div class="activity-info">
+                                    <div class="activity-title">${activity.title}</div>
+                                    <div class="activity-desc">${activity.description}</div>
+                                </div>
+                                <div class="activity-status">
+                                    ${activityCompleted ? '✓' : activityLocked ? '🔒' : '→'}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderTodayCard(currentDayIndex) {
+    const todayCard = document.getElementById('todayCard');
+    if (!window.DAILY_CURRICULUM || currentDayIndex >= window.DAILY_CURRICULUM.length) {
+        todayCard.style.display = 'none';
+        return;
+    }
+
+    const day = window.DAILY_CURRICULUM[currentDayIndex];
+    document.getElementById('todayTitle').textContent = `Day ${day.day}: ${day.title}`;
+    document.getElementById('todaySubtitle').textContent = `${day.icon} ${day.description}`;
+    todayCard.style.display = 'block';
+}
+
+function findCurrentDay(progress) {
+    if (!window.DAILY_CURRICULUM) return 0;
+
+    for (let i = 0; i < window.DAILY_CURRICULUM.length; i++) {
+        const dayProgress = getDayProgress(progress, window.DAILY_CURRICULUM[i]);
+        if (!dayProgress.completed) {
+            return i;
+        }
+    }
+    return window.DAILY_CURRICULUM.length - 1;
+}
+
+function getDayProgress(progress, day) {
+    let completedActivities = 0;
+
+    for (let i = 0; i < day.activities.length; i++) {
+        if (isActivityCompleted(progress, day.day, i)) {
+            completedActivities++;
+        }
+    }
+
+    return {
+        completedActivities,
+        completed: completedActivities === day.activities.length
+    };
+}
+
+function isActivityCompleted(progress, dayNumber, activityIndex) {
+    const key = `day${dayNumber}_activity${activityIndex}`;
+    return progress.lessons[key]?.completed || false;
+}
+
+function markActivityCompleted(dayNumber, activityIndex) {
+    const progress = loadProgress();
+    const key = `day${dayNumber}_activity${activityIndex}`;
+
+    if (!progress.lessons[key]) {
+        progress.lessons[key] = { completed: false, attempts: 0 };
+    }
+    progress.lessons[key].completed = true;
+    progress.lessons[key].completedAt = new Date().toISOString();
+
+    // Update streak
+    const today = new Date().toISOString().split('T')[0];
+    if (progress.lastPracticeDate !== today) {
+        if (progress.lastPracticeDate) {
+            const lastDate = new Date(progress.lastPracticeDate);
+            const todayDate = new Date(today);
+            const diffDays = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+            if (diffDays === 1) {
+                progress.streakDays++;
+            } else if (diffDays > 1) {
+                progress.streakDays = 1;
+            }
+        } else {
+            progress.streakDays = 1;
+        }
+        progress.lastPracticeDate = today;
+    }
+
+    saveProgress(progress);
+}
+
+function getActivityTypeIcon(type) {
+    const icons = {
+        matching: '🔗',
+        tones: '🎵',
+        listening: '👂',
+        cloze: '📝',
+        speaking: '🎤',
+        ordering: '🔀'
+    };
+    return icons[type] || '📖';
+}
+
+function toggleDayCard(dayIndex, isLocked) {
+    if (isLocked) return;
+
+    const cards = document.querySelectorAll('.day-card');
+    const card = cards[dayIndex];
+
+    if (card.classList.contains('expanded')) {
+        card.classList.remove('expanded');
+    } else {
+        // Collapse all others
+        cards.forEach(c => c.classList.remove('expanded'));
+        card.classList.add('expanded');
+    }
+}
+
+function startTodaysPractice() {
+    const progress = loadProgress();
+    const currentDayIndex = findCurrentDay(progress);
+    const day = window.DAILY_CURRICULUM[currentDayIndex];
+
+    // Find first incomplete activity
+    for (let i = 0; i < day.activities.length; i++) {
+        if (!isActivityCompleted(progress, day.day, i)) {
+            startDailyActivity(currentDayIndex, i, false);
+            return;
+        }
+    }
+
+    // All complete, start first activity again
+    startDailyActivity(currentDayIndex, 0, false);
+}
+
+function startDailyActivity(dayIndex, activityIndex, isLocked) {
+    if (isLocked) return;
+
+    const day = window.DAILY_CURRICULUM[dayIndex];
+    const activity = day.activities[activityIndex];
+
+    currentDay = day;
+    currentActivityIndex = activityIndex;
+
+    // Create a lesson object compatible with existing lesson types
+    const lesson = {
+        id: `day${day.day}_activity${activityIndex}`,
+        type: activity.type,
+        title: activity.title,
+        titleChinese: day.titleChinese,
+        titlePinyin: day.titlePinyin,
+        icon: day.icon,
+        ...activity
+    };
+
+    // Apply name templating
+    lesson.phrases = templatePhrases(activity.phrases || []);
+    lesson.sentences = templateSentences(activity.sentences || []);
+    lesson.questions = activity.questions || [];
+    lesson.words = activity.words || [];
+    lesson.vocabulary = day.vocabulary || activity.vocabulary || [];
+
+    // Start the lesson using existing infrastructure
+    currentLesson = lesson;
+    currentPhraseIndex = 0;
+    completedPhrases = new Set();
+
+    document.getElementById('menuView').classList.add('hidden');
+    document.getElementById('lessonView').classList.add('active');
+
+    // Hide all lesson type views first
+    document.getElementById('speakingView').classList.add('hidden');
+    document.getElementById('matchingView').classList.add('hidden');
+    document.getElementById('clozeView').classList.add('hidden');
+    document.getElementById('listeningView').classList.add('hidden');
+    document.getElementById('tonesView').classList.add('hidden');
+    document.getElementById('orderingView').classList.add('hidden');
+
+    // Show the appropriate view
+    if (activity.type === 'matching') {
+        document.getElementById('matchingView').classList.remove('hidden');
+        initMatchingLesson();
+    } else if (activity.type === 'cloze') {
+        document.getElementById('clozeView').classList.remove('hidden');
+        initClozeLesson();
+    } else if (activity.type === 'listening') {
+        document.getElementById('listeningView').classList.remove('hidden');
+        initListeningLesson();
+    } else if (activity.type === 'tones') {
+        document.getElementById('tonesView').classList.remove('hidden');
+        initTonesLesson();
+    } else if (activity.type === 'ordering') {
+        document.getElementById('orderingView').classList.remove('hidden');
+        initOrderingLesson();
+    } else {
+        document.getElementById('speakingView').classList.remove('hidden');
+        updateLessonUI();
+    }
+}
+
+// ============================================
+// Name Templating
+// ============================================
+
+function templatePhrases(phrases) {
+    const userName = getUserName();
+    if (!userName) return phrases;
+
+    return phrases.map(phrase => ({
+        ...phrase,
+        characters: templateString(phrase.characters, userName),
+        pinyin: templateString(phrase.pinyin, userName, 'pinyin'),
+        english: templateString(phrase.english, userName, 'english')
+    }));
+}
+
+function templateSentences(sentences) {
+    const userName = getUserName();
+    if (!userName) return sentences;
+
+    return sentences.map(sentence => ({
+        ...sentence,
+        template: templateString(sentence.template, userName),
+        pinyin: templateString(sentence.pinyin, userName, 'pinyin'),
+        english: templateString(sentence.english, userName, 'english')
+    }));
+}
+
+function templateString(str, userName, type = 'chinese') {
+    if (!str || !userName) return str;
+
+    return str
+        .replace(/\{\{NAME\}\}/g, userName.chinese)
+        .replace(/\{\{NAME_PINYIN\}\}/g, userName.pinyin)
+        .replace(/\{\{NAME_ENGLISH\}\}/g, userName.english || userName.chinese);
+}
+
+// ============================================
+// Legacy Lesson List (for backwards compatibility)
+// ============================================
 
 function renderLessonList() {
     const container = document.getElementById('lessonList');
@@ -535,6 +945,11 @@ function handleTranscription(transcript) {
             resultScore.className = 'result-score pass';
             completedPhrases.add(currentPhraseIndex);
             updateProgress();
+
+            // Check if all phrases completed for daily activity
+            if (currentDay && completedPhrases.size === currentLesson.phrases.length) {
+                markActivityCompleted(currentDay.day, currentActivityIndex);
+            }
         } else {
             resultStatus.className = 'result-status fail';
             resultIcon.textContent = '✗';
@@ -713,8 +1128,13 @@ function showMenu() {
     orderingCorrectCount = 0;
     orderingSelectedWords = [];
 
-    // Refresh lesson list to show updated progress
-    renderLessonList();
+    // Reset daily activity state
+    currentDay = null;
+    currentActivityIndex = 0;
+
+    // Refresh daily lessons UI to show updated progress
+    renderDailyLessons();
+    renderStats();
 }
 
 function nextPhrase() {
@@ -966,6 +1386,11 @@ function showMatchingComplete() {
 
     const isNewBest = timeSeconds <= bestTime;
 
+    // Mark daily activity as completed if this is a daily lesson
+    if (currentDay) {
+        markActivityCompleted(currentDay.day, currentActivityIndex);
+    }
+
     container.innerHTML = `
         <div class="matching-complete">
             <div class="complete-icon">${isNewBest ? '🏆' : '🎉'}</div>
@@ -1202,6 +1627,11 @@ function showClozeComplete() {
     const seconds = timeSeconds % 60;
     const timeDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
+    // Mark daily activity as completed if this is a daily lesson
+    if (currentDay && score >= 50) {
+        markActivityCompleted(currentDay.day, currentActivityIndex);
+    }
+
     // Hide vocab review
     document.getElementById('vocabReview').style.display = 'none';
 
@@ -1415,6 +1845,11 @@ function showListeningComplete() {
     const seconds = timeSeconds % 60;
     const timeDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
+    // Mark daily activity as completed if this is a daily lesson
+    if (currentDay && score >= 50) {
+        markActivityCompleted(currentDay.day, currentActivityIndex);
+    }
+
     container.innerHTML = `
         <div class="matching-complete">
             <div class="complete-icon">${score >= 80 ? '🏆' : score >= 50 ? '🎉' : '📚'}</div>
@@ -1600,6 +2035,11 @@ function showTonesComplete() {
     const minutes = Math.floor(timeSeconds / 60);
     const seconds = timeSeconds % 60;
     const timeDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
+    // Mark daily activity as completed if this is a daily lesson
+    if (currentDay && score >= 50) {
+        markActivityCompleted(currentDay.day, currentActivityIndex);
+    }
 
     container.innerHTML = `
         <div class="matching-complete">
@@ -1824,6 +2264,11 @@ function showOrderingComplete() {
     const seconds = timeSeconds % 60;
     const timeDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
+    // Mark daily activity as completed if this is a daily lesson
+    if (currentDay && score >= 50) {
+        markActivityCompleted(currentDay.day, currentActivityIndex);
+    }
+
     container.innerHTML = `
         <div class="matching-complete">
             <div class="complete-icon">${score >= 80 ? '🏆' : score >= 50 ? '🎉' : '📚'}</div>
@@ -1876,3 +2321,12 @@ window.clearOrdering = clearOrdering;
 window.checkOrdering = checkOrdering;
 window.nextOrderingSentence = nextOrderingSentence;
 window.restartOrdering = restartOrdering;
+
+// Profile and Daily Lessons exports
+window.selectAvatar = selectAvatar;
+window.selectName = selectName;
+window.completeProfileSetup = completeProfileSetup;
+window.showProfileSetup = showProfileSetup;
+window.toggleDayCard = toggleDayCard;
+window.startDailyActivity = startDailyActivity;
+window.startTodaysPractice = startTodaysPractice;

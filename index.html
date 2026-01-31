@@ -191,6 +191,402 @@
             margin-top: 8px;
         }
 
+        /* Profile Setup Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .modal-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .setup-section {
+            margin-bottom: 24px;
+        }
+
+        .setup-label {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+
+        .avatar-option {
+            width: 100%;
+            aspect-ratio: 1;
+            font-size: 28px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .avatar-option:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .avatar-option.selected {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+
+        .name-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .name-option {
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .name-option:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .name-option.selected {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+
+        .name-chinese {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .name-pinyin {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .name-english {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .setup-button {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .setup-button:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .setup-button:not(:disabled):hover {
+            filter: brightness(1.1);
+        }
+
+        /* User Profile Header */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            font-size: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 50%;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-greeting {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .profile-name {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .profile-name-pinyin {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .profile-edit {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Daily Lesson Cards */
+        .daily-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 24px 0 12px 0;
+            color: var(--text);
+        }
+
+        .day-card {
+            background: var(--card);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .day-card.locked {
+            opacity: 0.6;
+        }
+
+        .day-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            cursor: pointer;
+        }
+
+        .day-card.locked .day-header {
+            cursor: not-allowed;
+        }
+
+        .day-icon {
+            width: 56px;
+            height: 56px;
+            font-size: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 12px;
+        }
+
+        .day-card.completed .day-icon {
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .day-info {
+            flex: 1;
+        }
+
+        .day-number {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .day-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 2px 0;
+        }
+
+        .day-title-chinese {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .day-progress {
+            text-align: right;
+        }
+
+        .day-progress-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .day-progress-icon {
+            font-size: 24px;
+        }
+
+        .day-activities {
+            padding: 0 16px 16px 16px;
+            display: none;
+        }
+
+        .day-card.expanded .day-activities {
+            display: block;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .activity-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .activity-item.completed {
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .activity-item.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .activity-info {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .activity-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .activity-status {
+            font-size: 18px;
+        }
+
+        /* Today's Practice Card */
+        .today-card {
+            background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .today-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .today-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .today-subtitle {
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .today-button {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .today-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* Activity type icons */
+        .type-icon-matching { background: #fef3c7; }
+        .type-icon-tones { background: #dbeafe; }
+        .type-icon-listening { background: #f3e8ff; }
+        .type-icon-cloze { background: #dcfce7; }
+        .type-icon-speaking { background: #fee2e2; }
+        .type-icon-ordering { background: #e0e7ff; }
+
         /* Lesson View */
         .lesson-view {
             display: none;
@@ -1292,21 +1688,73 @@
             <a href="?asr=whisper" id="linkWhisper">Whisper (Local)</a>
         </div>
 
+        <!-- Profile Setup Modal -->
+        <div id="profileSetupModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-title">Welcome! 欢迎</div>
+                <div class="modal-subtitle">Let's set up your profile</div>
+
+                <div class="setup-section">
+                    <label class="setup-label">Choose your avatar:</label>
+                    <div id="avatarGrid" class="avatar-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="setup-section">
+                    <label class="setup-label">Choose your Chinese name:</label>
+                    <div id="nameGrid" class="name-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <button id="setupCompleteBtn" class="setup-button" disabled onclick="completeProfileSetup()">
+                    Start Learning
+                </button>
+            </div>
+        </div>
+
         <!-- Menu View -->
         <div id="menuView" class="menu-view">
-            <div class="header">
+            <!-- User Profile Header -->
+            <div id="profileHeader" class="profile-header" style="display: none;">
+                <div id="profileAvatar" class="profile-avatar">😊</div>
+                <div class="profile-info">
+                    <div class="profile-greeting">你好!</div>
+                    <div id="profileName" class="profile-name">小明</div>
+                    <div id="profileNamePinyin" class="profile-name-pinyin">Xiǎo Míng</div>
+                </div>
+                <button class="profile-edit" onclick="showProfileSetup()">Edit</button>
+            </div>
+
+            <!-- Default Header (shown before profile setup) -->
+            <div id="defaultHeader" class="header">
                 <div class="header-icon">🌲</div>
                 <h1>普通话练习</h1>
                 <p>Mandarin Practice</p>
             </div>
 
             <div id="modelStatus" class="model-status loading">
-                Loading Whisper model... This may take a minute on first load.
+                Loading speech recognition...
             </div>
 
             <div id="statsContainer" class="stats-container"></div>
 
-            <div id="lessonList"></div>
+            <!-- Today's Practice Card -->
+            <div id="todayCard" class="today-card" style="display: none;">
+                <div class="today-label">Today's Practice</div>
+                <div id="todayTitle" class="today-title">Day 1: Hello & Greetings</div>
+                <div id="todaySubtitle" class="today-subtitle">👋 Learn basic greetings</div>
+                <button class="today-button" onclick="startTodaysPractice()">
+                    Continue →
+                </button>
+            </div>
+
+            <!-- Daily Lessons List -->
+            <div id="dailyLessonList"></div>
+
+            <!-- Legacy lesson list (hidden, for backwards compatibility) -->
+            <div id="lessonList" style="display: none;"></div>
         </div>
 
         <!-- Lesson View -->
@@ -1466,6 +1914,7 @@
     </div>
 
     <script src="curriculum.js"></script>
+    <script src="daily-curriculum.js"></script>
     <script src="scoring.js"></script>
     <script type="module" src="app.js"></script>
 </body>

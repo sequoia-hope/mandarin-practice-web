@@ -1,6 +1,123 @@
 // localStorage-based progress tracking for Mandarin Practice App
 
 const STORAGE_KEY = 'mandarin-practice-progress';
+const PROFILE_KEY = 'mandarin-practice-profile';
+
+// ============================================
+// User Profile
+// ============================================
+
+/**
+ * Available Chinese names for users to choose from
+ * These are common names that work well with ASR
+ */
+export const CHINESE_NAMES = [
+    { chinese: '小明', pinyin: 'Xiǎo Míng', english: 'Little Bright' },
+    { chinese: '小红', pinyin: 'Xiǎo Hóng', english: 'Little Red' },
+    { chinese: '小华', pinyin: 'Xiǎo Huá', english: 'Little China' },
+    { chinese: '小龙', pinyin: 'Xiǎo Lóng', english: 'Little Dragon' },
+    { chinese: '小美', pinyin: 'Xiǎo Měi', english: 'Little Beautiful' },
+    { chinese: '大卫', pinyin: 'Dà Wèi', english: 'David' },
+    { chinese: '安娜', pinyin: 'Ān Nà', english: 'Anna' },
+    { chinese: '杰克', pinyin: 'Jié Kè', english: 'Jack' },
+    { chinese: '丽丽', pinyin: 'Lì Lì', english: 'Lily' },
+    { chinese: '明明', pinyin: 'Míng Míng', english: 'Bright' },
+    { chinese: '天天', pinyin: 'Tiān Tiān', english: 'Every Day' },
+    { chinese: '乐乐', pinyin: 'Lè Lè', english: 'Happy' },
+];
+
+/**
+ * Available avatar emojis
+ */
+export const AVATAR_EMOJIS = [
+    '😊', '😎', '🤓', '🧑‍🎓', '👨‍💼', '👩‍💼',
+    '🐼', '🐉', '🦊', '🐱', '🐶', '🦁',
+    '🌸', '🌺', '🎋', '🏮', '🎎', '🧧',
+    '⭐', '🌙', '☀️', '🌈', '🎯', '🏆',
+];
+
+/**
+ * Get default user profile
+ */
+function getDefaultProfile() {
+    return {
+        avatar: null,
+        chineseName: null,
+        setupComplete: false,
+        createdAt: null
+    };
+}
+
+/**
+ * Load user profile from localStorage
+ * @returns {Object} User profile
+ */
+export function loadProfile() {
+    try {
+        const stored = localStorage.getItem(PROFILE_KEY);
+        if (stored) {
+            return JSON.parse(stored);
+        }
+    } catch (error) {
+        console.error('Error loading profile:', error);
+    }
+    return getDefaultProfile();
+}
+
+/**
+ * Save user profile to localStorage
+ * @param {Object} profile - Profile data to save
+ */
+export function saveProfile(profile) {
+    try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    } catch (error) {
+        console.error('Error saving profile:', error);
+    }
+}
+
+/**
+ * Check if user has completed profile setup
+ * @returns {boolean}
+ */
+export function isProfileSetup() {
+    const profile = loadProfile();
+    return profile.setupComplete && profile.avatar && profile.chineseName;
+}
+
+/**
+ * Complete profile setup
+ * @param {string} avatar - Emoji avatar
+ * @param {string} chineseName - Chinese name
+ */
+export function setupProfile(avatar, chineseName) {
+    const profile = {
+        avatar,
+        chineseName,
+        setupComplete: true,
+        createdAt: new Date().toISOString()
+    };
+    saveProfile(profile);
+    return profile;
+}
+
+/**
+ * Get the user's Chinese name object
+ * @returns {Object|null} Name object with chinese, pinyin, english
+ */
+export function getUserName() {
+    const profile = loadProfile();
+    if (!profile.chineseName) return null;
+    return CHINESE_NAMES.find(n => n.chinese === profile.chineseName) || {
+        chinese: profile.chineseName,
+        pinyin: '',
+        english: ''
+    };
+}
+
+// ============================================
+// Progress Tracking
+// ============================================
 
 /**
  * Default progress structure
