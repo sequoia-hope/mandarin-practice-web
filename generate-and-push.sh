@@ -3,14 +3,24 @@
 # Pull, generate audio, commit and push in one command.
 #
 # Usage:
-#   ./generate-and-push.sh              # Generate and push
-#   ./generate-and-push.sh --force      # Regenerate all audio
-#   ./generate-and-push.sh --dry-run    # Preview only
+#   ./generate-and-push.sh                        # Generate with edge-tts
+#   ./generate-and-push.sh --engine cosyvoice     # Generate with CosyVoice
+#   ./generate-and-push.sh --force                # Regenerate all audio
+#   ./generate-and-push.sh --dry-run              # Preview only
+#
+# First time setup:
+#   ./setup-tts.sh              # Create venv with edge-tts
+#   ./setup-tts.sh --cosyvoice  # Add CosyVoice support
 #
 
 set -e
 
 cd "$(dirname "$0")"
+
+# Activate virtual environment if it exists
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
+fi
 
 echo "📥 Pulling latest changes..."
 git pull
