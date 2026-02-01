@@ -3,19 +3,26 @@
 Generate TTS audio for all speaking phrases in the Mandarin Practice app.
 
 Simple usage:
-    python generate-audio.py                      # Use edge-tts (default)
-    python generate-audio.py --engine cosyvoice  # Use CosyVoice (Qwen/Alibaba)
+    python generate-audio.py                      # Use edge-tts (default, recommended)
+    python generate-audio.py --engine cosyvoice  # Use CosyVoice (requires setup)
     python generate-audio.py --engine chattts    # Use ChatTTS
 
 Engines:
-    edge      - Microsoft Edge TTS (cloud, easy setup)
-    cosyvoice - Alibaba CosyVoice (local, high quality Chinese)
+    edge      - Microsoft Edge TTS (cloud, easy setup, recommended)
+    cosyvoice - Alibaba CosyVoice (local, high quality, complex setup)
     chattts   - ChatTTS (local, open source)
 
 Requirements:
-    edge-tts:    pip install edge-tts
-    cosyvoice:   pip install cosyvoice-v2 torch torchaudio
-    chattts:     pip install chattts torch torchaudio
+    edge-tts (recommended):
+        pip install edge-tts
+
+    cosyvoice (complex setup - requires cloning repo):
+        git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
+        cd CosyVoice && pip install -r requirements.txt
+        # Then download model via modelscope
+
+    chattts:
+        pip install ChatTTS torch torchaudio
 
 Options:
     --engine     TTS engine to use (default: edge)
@@ -88,7 +95,12 @@ def generate_cosyvoice(text, output_path, voice="中文女", model=None):
     """
     Generate audio using CosyVoice (Alibaba/Qwen ecosystem).
 
-    Install: pip install cosyvoice-v2 torch torchaudio
+    Setup (requires cloning the repo):
+        git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git
+        cd CosyVoice
+        pip install -r requirements.txt
+        # Download model:
+        python -c "from modelscope import snapshot_download; snapshot_download('iic/CosyVoice-300M-SFT', local_dir='pretrained_models/CosyVoice-300M-SFT')"
 
     Available voices: 中文女, 中文男, 英文女, 英文男, 日语男, 粤语女, 韩语女
     """
@@ -96,9 +108,37 @@ def generate_cosyvoice(text, output_path, voice="中文女", model=None):
     import torchaudio
 
     if model is None:
-        from cosyvoice import CosyVoice2
-        print("  Loading CosyVoice model (first run may download ~2GB)...")
-        model = CosyVoice2('CosyVoice2-0.5B', load_jit=False, load_trt=False)
+        try:
+            from cosyvoice.cli.cosyvoice import CosyVoice
+        except ImportError:
+            print("Error: CosyVoice not properly installed.")
+            print("CosyVoice requires cloning the repo and installing dependencies:")
+            print("  git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git")
+            print("  cd CosyVoice && pip install -r requirements.txt")
+            print("")
+            print("Or use edge-tts instead (much simpler):")
+            print("  python generate-audio.py --engine edge")
+            sys.exit(1)
+
+        print("  Loading CosyVoice model (first run downloads ~2GB)...")
+        # Try common model paths
+        model_paths = [
+            'pretrained_models/CosyVoice-300M-SFT',
+            '../CosyVoice/pretrained_models/CosyVoice-300M-SFT',
+            os.path.expanduser('~/CosyVoice/pretrained_models/CosyVoice-300M-SFT'),
+        ]
+        model_path = None
+        for p in model_paths:
+            if os.path.exists(p):
+                model_path = p
+                break
+
+        if model_path is None:
+            print("Error: CosyVoice model not found. Download it first:")
+            print('  python -c "from modelscope import snapshot_download; snapshot_download(\'iic/CosyVoice-300M-SFT\', local_dir=\'pretrained_models/CosyVoice-300M-SFT\')"')
+            sys.exit(1)
+
+        model = CosyVoice(model_path, load_jit=False, load_onnx=False)
 
     # Generate speech
     for result in model.inference_sft(text, voice, stream=False):

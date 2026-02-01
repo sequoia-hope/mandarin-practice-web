@@ -67,10 +67,25 @@ done
 # Install CosyVoice if requested
 if [ "$INSTALL_COSYVOICE" = true ]; then
     echo ""
-    echo "Installing CosyVoice (Alibaba/Qwen TTS)..."
-    echo "Note: This requires ~2GB download on first use"
+    echo "Installing CosyVoice dependencies (Alibaba/Qwen TTS)..."
+    echo ""
+    echo "⚠️  NOTE: CosyVoice requires manual setup - it cannot be pip installed!"
+    echo ""
+    echo "After this script completes, you must:"
+    echo "  1. Clone the repo:"
+    echo "     git clone --recursive https://github.com/FunAudioLLM/CosyVoice.git"
+    echo ""
+    echo "  2. Install its requirements:"
+    echo "     cd CosyVoice && pip install -r requirements.txt"
+    echo ""
+    echo "  3. Download the model (run in Python):"
+    echo "     from modelscope import snapshot_download"
+    echo "     snapshot_download('iic/CosyVoice-300M-SFT', local_dir='pretrained_models/CosyVoice-300M-SFT')"
+    echo ""
+    echo "Installing PyTorch (required for CosyVoice)..."
     pip install torch torchaudio
-    pip install cosyvoice-v2 || echo "Warning: cosyvoice-v2 install failed, try: pip install git+https://github.com/FunAudioLLM/CosyVoice.git"
+    echo ""
+    echo "CosyVoice base dependencies installed. Follow the manual steps above to complete setup."
 fi
 
 # Install ChatTTS if requested
