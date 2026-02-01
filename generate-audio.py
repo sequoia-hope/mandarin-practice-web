@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Generate TTS audio for all speaking phrases in the Mandarin Practice app.
+Generate TTS audio for the Mandarin Practice app.
+
+Generates audio for:
+  - Speaking lesson phrases (from daily-curriculum.js)
+  - Chinese profile names (12 names users can choose from)
 
 Simple usage:
     python generate-audio.py                      # Use edge-tts (default, recommended)
@@ -48,6 +52,35 @@ else:
 
 AUDIO_DIR = PROJECT_ROOT / "audio"
 DAILY_CURRICULUM_FILE = PROJECT_ROOT / "daily-curriculum.js"
+
+# Chinese names from storage.js - need audio for profile feature
+CHINESE_NAMES = [
+    { 'chinese': '小明', 'pinyin': 'Xiǎo Míng', 'english': 'Little Bright' },
+    { 'chinese': '小红', 'pinyin': 'Xiǎo Hóng', 'english': 'Little Red' },
+    { 'chinese': '小华', 'pinyin': 'Xiǎo Huá', 'english': 'Little China' },
+    { 'chinese': '小龙', 'pinyin': 'Xiǎo Lóng', 'english': 'Little Dragon' },
+    { 'chinese': '小美', 'pinyin': 'Xiǎo Měi', 'english': 'Little Beautiful' },
+    { 'chinese': '大卫', 'pinyin': 'Dà Wèi', 'english': 'David' },
+    { 'chinese': '安娜', 'pinyin': 'Ān Nà', 'english': 'Anna' },
+    { 'chinese': '杰克', 'pinyin': 'Jié Kè', 'english': 'Jack' },
+    { 'chinese': '丽丽', 'pinyin': 'Lì Lì', 'english': 'Lily' },
+    { 'chinese': '明明', 'pinyin': 'Míng Míng', 'english': 'Bright' },
+    { 'chinese': '天天', 'pinyin': 'Tiān Tiān', 'english': 'Every Day' },
+    { 'chinese': '乐乐', 'pinyin': 'Lè Lè', 'english': 'Happy' },
+]
+
+
+def extract_names():
+    """Extract all Chinese names for audio generation"""
+    return [
+        {
+            'text': name['chinese'],
+            'text_for_audio': name['chinese'],
+            'pinyin': name['pinyin'],
+            'filename': f"name_{name['chinese']}.mp3"
+        }
+        for name in CHINESE_NAMES
+    ]
 
 
 def extract_phrases():
@@ -319,24 +352,34 @@ CosyVoice voices (--engine cosyvoice):
         print(f"   Voice: {args.voice}")
     print(f"   Audio dir: {AUDIO_DIR}\n")
 
-    # Extract phrases
+    # Extract all audio items
     phrases = extract_phrases()
-    print(f"Found {len(phrases)} speaking phrases\n")
+    names = extract_names()
+    all_items = phrases + names
+
+    print(f"Found {len(phrases)} speaking phrases")
+    print(f"Found {len(names)} Chinese names")
+    print(f"Total: {len(all_items)} audio files\n")
 
     if args.list:
+        print("Speaking phrases:")
         for p in phrases:
             print(f"  Day {p['day']}, #{p['index']}: {p['text']}")
             print(f"    -> {p['filename']}")
+        print("\nChinese names:")
+        for n in names:
+            print(f"  {n['text']} ({n['pinyin']})")
+            print(f"    -> {n['filename']}")
         return
 
     # Generate audio
     if args.engine == 'edge':
         generated, skipped = asyncio.run(
-            generate_all_edge(phrases, args.voice, args.dry_run, args.force)
+            generate_all_edge(all_items, args.voice, args.dry_run, args.force)
         )
     else:
         generated, skipped = generate_all_local(
-            phrases, args.engine, args.voice, args.dry_run, args.force
+            all_items, args.engine, args.voice, args.dry_run, args.force
         )
 
     print(f"\n✅ Done! Generated: {generated}, Skipped: {skipped}")
